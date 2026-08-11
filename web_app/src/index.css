@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Canvas styling for PDF render */
+.pdf-canvas-container {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-ljk, .printable-ljk * {
+    visibility: visible;
+  }
+  .printable-ljk {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
