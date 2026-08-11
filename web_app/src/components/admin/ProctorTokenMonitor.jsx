@@ -4,7 +4,7 @@ import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRo
 import { localExamStore } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
 
-export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, isTokenAccessEnabled, isAdminRole }) {
+export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, activeExams = [], isTokenAccessEnabled, isAdminRole }) {
   const [activeTab, setActiveTab] = useState('token'); // 'token' | 'attendance' | 'minutes'
   const [officialMinutes, setOfficialMinutes] = useState(localExamStore.getOfficialMinutes());
   const [showMinutesForm, setShowMinutesForm] = useState(!localExamStore.getOfficialMinutes() && !isAdminRole);

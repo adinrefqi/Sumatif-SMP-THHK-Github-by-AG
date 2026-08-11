@@ -7,7 +7,14 @@ import {
 import { supabase, isSupabaseConfigured, localExamStore } from '../../lib/supabase';
 import MobilePdfViewer from '../viewer/MobilePdfViewer';
 
-export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onToggleTokenAccess, activeExam, onSelectActiveExam }) {
+export default function PdfUploader({
+  onExamCreated,
+  isTokenAccessEnabled,
+  onToggleTokenAccess,
+  activeExamIds = [],
+  onToggleActiveExamId,
+  activeExams = []
+}) {
   const [sourceType, setSourceType] = useState('file'); // 'file' | 'gdrive' | 'batch'
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('Bahasa Indonesia');
@@ -716,7 +723,7 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
 
       {/* MASTER EXAM BANK SECTION (Daftar Bank Soal Master) */}
       <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
-        <div className="flex items-center justify-between border-b border-console-line pb-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-console-line pb-3 mb-4 gap-2">
           <div className="flex items-center gap-2">
             <FolderKanban className="w-4 h-4 text-accent" />
             <h3 className="font-extrabold text-ink-strong text-sm tracking-tight">
@@ -724,7 +731,7 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
             </h3>
           </div>
           <span className="text-[11px] text-ink-faint font-mono">
-            Sesi Aktif: <strong className="text-accent">{activeExam?.title || 'Belum Dipilih'}</strong>
+            Sesi Aktif ({activeExamIds.length} Soal): <strong className="text-accent">{activeExams.map(e => e.subject).join(', ') || 'Belum Dipilih'}</strong>
           </span>
         </div>
 
@@ -733,7 +740,7 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {savedExams.map((ex) => {
-              const isActive = activeExam?.id === ex.id;
+              const isActive = activeExamIds.includes(ex.id);
               return (
                 <div
                   key={ex.id}
@@ -764,19 +771,24 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
                   </div>
 
                   <div className="flex items-center justify-between pt-3 mt-3 border-t border-console-line text-xs">
-                    {!isActive ? (
-                      <button
-                        onClick={() => onSelectActiveExam && onSelectActiveExam(ex)}
-                        className="px-2.5 py-1 bg-accent hover:bg-accent-soft text-console-bg font-extrabold text-[10px] uppercase tracking-wider rounded transition-colors"
-                      >
-                        Aktifkan Ujian Ini
-                      </button>
-                    ) : (
-                      <span className="text-[10px] font-bold text-ok flex items-center gap-1">
-                        <CheckCheck className="w-3.5 h-3.5" />
-                        <span>Digunakan Siswa</span>
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => onToggleActiveExamId && onToggleActiveExamId(ex.id)}
+                      className={`px-2.5 py-1 text-[10px] uppercase font-extrabold tracking-wider rounded transition-colors flex items-center gap-1 ${
+                        isActive
+                          ? 'bg-ok/20 text-ok border border-ok/40 hover:bg-bad/20 hover:text-bad hover:border-bad/40'
+                          : 'bg-accent hover:bg-accent-soft text-console-bg'
+                      }`}
+                    >
+                      {isActive ? (
+                        <>
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          <span>Nonaktifkan</span>
+                        </>
+                      ) : (
+                        <span>Aktifkan Ujian Ini</span>
+                      )}
+                    </button>
 
                     <div className="flex items-center gap-1">
                       <button

@@ -20,7 +20,8 @@
 
 - **Implementasi Super Admin & Presensi TTD Siswa (`web_app`):**
   - Menambahkan fitur **Batch Upload Multi-File PDF** dengan Smart Filename Parser (deteksi otomatis mapel & kelas dari nama file) dan Tabel Review Batch.
-  - Menambahkan modul **Master Exam Bank List** untuk memilih naskah soal aktif sesi ujian (*Set Active Exam*), uji pratinjau, dan hapus naskah.
+  - Menambahkan fitur **Multi-Active Exams Selection**: Super Admin dapat mengaktifkan beberapa naskah soal sekaligus untuk berbagai mata pelajaran/kelas serentak.
+  - Menambahkan **Pencocokan Otomatis Naskah Per Kelas Siswa**: Siswa Kelas 7/8/9 otomatis diarahkan ke naskah soal aktif yang sesuai dengan tingkat kelasnya.
   - Menambahkan Gate Wajib Berita Acara Ujian saat Proktor (PIN: `12345`) pertama kali login sebelum membuka rilis token.
   - Menambahkan modal Canvas Tanda Tangan Digital Siswa setelah verifikasi token 6-karakter.
   - Menambahkan tab Rekap Presensi & Tanda Tangan Digital Siswa di Panel Proktor.

@@ -22,7 +22,20 @@ export default function App() {
   const [isAdminRole, setIsAdminRole] = useState(false); // true: Super Admin, false: Proctor
 
   const [isTokenAccessEnabled, setIsTokenAccessEnabled] = useState(localExamStore.isTokenAccessEnabled());
-  const [activeExam, setActiveExam] = useState(localExamStore.getExams()[0]);
+  const [activeExamIds, setActiveExamIds] = useState(localExamStore.getActiveExamIds());
+  const [activeExams, setActiveExams] = useState(localExamStore.getActiveExams());
+
+  const handleToggleActiveExamId = (examId) => {
+    const updatedIds = localExamStore.toggleActiveExamId(examId);
+    setActiveExamIds(updatedIds);
+    setActiveExams(localExamStore.getActiveExams());
+  };
+
+  const handleExamCreated = (newExam) => {
+    const updatedIds = localExamStore.toggleActiveExamId(newExam.id);
+    setActiveExamIds(updatedIds);
+    setActiveExams(localExamStore.getActiveExams());
+  };
 
   // Online / Offline Listeners
   useEffect(() => {
@@ -109,17 +122,18 @@ export default function App() {
             {!studentSession ? (
               <StudentTokenScreen
                 activeTokenObj={activeTokenObj}
-                activeExam={activeExam}
+                activeExam={studentSession?.exam || activeExams[0]}
+                activeExams={activeExams}
                 onTokenValidated={(session) => setStudentSession(session)}
               />
             ) : (
               <div className="flex flex-col h-[calc(100vh-56px)]">
                 <ExamTimerHeader
                   studentInfo={studentSession}
-                  activeExam={activeExam}
+                  activeExam={studentSession?.exam || activeExams[0]}
                   onRequestHelp={() => console.log('Proctor Help Requested')}
                 />
-                <MobilePdfViewer pdfUrl={activeExam?.pdf_url} />
+                <MobilePdfViewer pdfUrl={studentSession?.exam?.pdf_url || activeExams[0]?.pdf_url} />
               </div>
             )}
           </>
@@ -198,11 +212,12 @@ export default function App() {
                 {/* SUPER ADMIN COMPONENT (Upload PDF / GDrive / Batch & Master Switch) */}
                 {isAdminRole && (
                   <PdfUploader
-                    onExamCreated={(newExam) => setActiveExam(newExam)}
+                    onExamCreated={handleExamCreated}
                     isTokenAccessEnabled={isTokenAccessEnabled}
                     onToggleTokenAccess={handleToggleTokenAccess}
-                    activeExam={activeExam}
-                    onSelectActiveExam={(selectedExam) => setActiveExam(selectedExam)}
+                    activeExamIds={activeExamIds}
+                    onToggleActiveExamId={handleToggleActiveExamId}
+                    activeExams={activeExams}
                   />
                 )}
 
@@ -210,7 +225,8 @@ export default function App() {
                 <ProctorTokenMonitor
                   activeTokenObj={activeTokenObj}
                   onTokenUpdate={(updatedObj) => setActiveTokenObj(updatedObj)}
-                  activeExam={activeExam}
+                  activeExam={activeExams[0]}
+                  activeExams={activeExams}
                   isTokenAccessEnabled={isTokenAccessEnabled}
                   isAdminRole={isAdminRole}
                 />

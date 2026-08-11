@@ -5,13 +5,24 @@ import { localExamStore } from '../../lib/supabase';
 
 import StudentAttendanceModal from './StudentAttendanceModal';
 
-export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, activeExam }) {
+export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, activeExam, activeExams = [] }) {
   const [studentName, setStudentName] = useState('');
   const [nisn, setNisn] = useState('');
   const [studentClass, setStudentClass] = useState('8A');
+  const [selectedExamId, setSelectedExamId] = useState('');
   const [inputToken, setInputToken] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [validatedInfo, setValidatedInfo] = useState(null);
+
+  const availableExamsList = activeExams.length > 0 ? activeExams : (activeExam ? [activeExam] : []);
+  
+  // Grade matching logic
+  const gradeKey = studentClass.startsWith('7') ? 'Kelas 7' : studentClass.startsWith('9') ? 'Kelas 9' : 'Kelas 8';
+  const gradeMatchingExams = availableExamsList.filter(e => e.grade === gradeKey);
+  const currentExamOptions = gradeMatchingExams.length > 0 ? gradeMatchingExams : availableExamsList;
+
+  // Selected Exam
+  const chosenExam = currentExamOptions.find(e => e.id === selectedExamId) || currentExamOptions[0] || activeExam;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -33,7 +44,8 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
         name: studentName,
         nisn: nisn || '0080000000',
         class: studentClass,
-        tokenEntered: inputToken.toUpperCase()
+        tokenEntered: inputToken.toUpperCase(),
+        chosenExam: chosenExam
       });
     } else {
       setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
@@ -44,7 +56,10 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
     // Save student attendance record locally
     localExamStore.saveAttendanceRecord(attendanceData);
     if (onTokenValidated) {
-      onTokenValidated(attendanceData);
+      onTokenValidated({
+        ...attendanceData,
+        exam: chosenExam
+      });
     }
   };
 
@@ -64,8 +79,8 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
           <h2 className="font-extrabold text-2xl text-ink-strong tracking-tight">
             Masuk Sesi Ujian
           </h2>
-          <p className="text-xs text-ink-muted mt-1.5">
-            {activeExam?.title || 'Sumatif Ujian Sekolah SMP THHK'}
+          <p className="text-xs text-ink-muted mt-1.5 font-semibold">
+            {chosenExam?.title || activeExam?.title || 'Sumatif Ujian Sekolah SMP THHK'}
           </p>
         </div>
 
@@ -127,6 +142,26 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
               </select>
             </div>
           </div>
+
+          {/* Exam Selector if multiple exams are active */}
+          {currentExamOptions.length > 1 && (
+            <div>
+              <label className="block text-[10px] font-bold text-accent uppercase tracking-label mb-1.5">
+                Pilih Naskah Soal Ujian Aktif *
+              </label>
+              <select
+                value={chosenExam?.id || ''}
+                onChange={(e) => setSelectedExamId(e.target.value)}
+                className={inputBase}
+              >
+                {currentExamOptions.map(ex => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.subject} ({ex.grade}) — {ex.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Token Box */}
           <div className="pt-1">

@@ -55,20 +55,46 @@ export const localExamStore = {
       return localExamStore.getExams();
     }
   },
-  getActiveExamId: () => {
+  getActiveExamIds: () => {
     try {
-      return localStorage.getItem('thhk_active_exam_id');
+      const data = localStorage.getItem('thhk_active_exam_ids');
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch { }
+    const exams = localExamStore.getExams();
+    return exams.length > 0 ? [exams[0].id] : [];
+  },
+  setActiveExamIds: (examIds) => {
+    try {
+      localStorage.setItem('thhk_active_exam_ids', JSON.stringify(examIds));
+      return examIds;
     } catch {
-      return null;
+      return examIds;
     }
   },
-  setActiveExamId: (examId) => {
-    try {
-      localStorage.setItem('thhk_active_exam_id', examId);
-      return examId;
-    } catch {
-      return examId;
+  toggleActiveExamId: (examId) => {
+    const current = localExamStore.getActiveExamIds();
+    let updated;
+    if (current.includes(examId)) {
+      // Don't allow unchecking if it's the only one left
+      if (current.length > 1) {
+        updated = current.filter(id => id !== examId);
+      } else {
+        updated = current;
+      }
+    } else {
+      updated = [...current, examId];
     }
+    localExamStore.setActiveExamIds(updated);
+    return updated;
+  },
+  getActiveExams: () => {
+    const allExams = localExamStore.getExams();
+    const activeIds = localExamStore.getActiveExamIds();
+    const activeList = allExams.filter(e => activeIds.includes(e.id));
+    return activeList.length > 0 ? activeList : allExams.slice(0, 1);
   },
   getActiveToken: () => {
     try {
