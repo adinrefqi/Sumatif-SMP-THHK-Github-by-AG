@@ -18,10 +18,11 @@
 
 ## Log Aktivitas Terbaru
 
-### [2026-08-11]
-- **Redesign UI/UX Web App (`web_app`):**
-  - Mengubah total bahasa visual menjadi *Operational Console* (dark utility): latar gelap `#0B0F14`, panel `#11171F`, aksen kuning ANBK `#F0B90B`, font mono JetBrains Mono untuk token/timer.
-  - Mendesain ulang seluruh komponen: Navbar, StudentTokenScreen, ExamTimerHeader, MobilePdfViewer, OfflineFallbackModal, App shell (admin auth), ProctorTokenMonitor, PdfUploader.
+- **Implementasi Super Admin & Presensi TTD Siswa (`web_app`):**
+  - Menambahkan autentikasi Super Admin (PIN: `THHK2026`) dengan fitur unggah PDF lokal / link Google Drive dan Master Switch "Buka/Kunci Akses Rilis Token".
+  - Menambahkan Gate Wajib Berita Acara Ujian saat Proktor (PIN: `12345`) pertama kali login sebelum membuka rilis token.
+  - Menambahkan modal Canvas Tanda Tangan Digital Siswa setelah verifikasi token 6-karakter.
+  - Menambahkan tab Rekap Presensi & Tanda Tangan Digital Siswa di Panel Proktor.
   - Build produksi terverifikasi sukses (`vite build`).
 - **Implementasi Modul Flutter Exambrowser (`flutter_app/`):**
   - Membuat `pubspec.yaml` dengan dependensi `flutter_inappwebview`, `flutter_windowmanager`, `kiosk_mode`, `audioplayers`, dan `battery_plus`.

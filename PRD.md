@@ -31,11 +31,16 @@ Sistem ini menerapkan **Metode Hibrida**:
 - Membaca soal di layar sentuh HP (Zoom, Bookmark Halaman Bacaan, Mode Ramah Mata).
 - Menjawab pada Lembar Jawab Kertas (LJK).
 
-### B. Proktor / Guru (Exam Administrator)
-- Mengunggah file PDF naskah soal ke sistem cloud Supabase.
-- Memantau Token Rilis 15-menit yang diperbarui secara otomatis.
-- Memantau status hadir/sesi siswa dan menerima sinyal "Panggil Pengawas".
+### B. Proktor / Pengawas Ruangan
+- Memasukkan PIN Ruang (`12345`) & Wajib Mengisi Form Berita Acara Ujian saat awal login.
+- Memantau & merilis Token 15-menit (jika telah dibuka oleh Super Admin).
+- Memantau presensi real-time dan melihat rekap Tanda Tangan Digital siswa.
 - Melakukan *Emergency Session Reset* jika HP siswa bermasalah.
+
+### C. Super Admin (Panitia Ujian)
+- Memasukkan PIN Super Admin (`THHK2026`).
+- Mengunggah file PDF naskah soal lokal atau menginput Link Google Drive PDF.
+- Mengontrol Master Switch "Buka/Kunci Akses Rilis Token" untuk Proktor Ruangan.
 
 ---
 
@@ -58,6 +63,9 @@ Sistem ini menerapkan **Metode Hibrida**:
 2. **Stimulus Bookmark System:** Menyimpan pin halaman bacaan panjang (stimulus ANBK) untuk lompat halaman 1-tap.
 3. **Rotasi Token 15-Menit:** Sinkronisasi real-time via Supabase Realtime dengan *grace period* 2 menit.
 4. **Offline Fallback UI:** Antarmuka peringatan koneksi terputus yang menjaga naskah PDF tetap terbuka tanpa layar blank Chrome.
+5. **Daftar Hadir & Tanda Tangan Digital Siswa:** Modal canvas TTD digital yang wajib diisi siswa setelah token terverifikasi.
+6. **Integrasi Google Drive PDF & Master Switch Token:** Pilihan input link GDrive untuk soal PDF dan penguncian rilis token oleh Super Admin.
+7. **Gate Berita Acara Proktor:** Kewajiban proktor mengisi berita acara sebelum membuka rilis token & monitoring.
 
 ---
 

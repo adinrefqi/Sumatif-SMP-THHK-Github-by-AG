@@ -3,12 +3,15 @@ import { KeyRound, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { validateStudentToken } from '../../utils/tokenRotationManager';
 import { localExamStore } from '../../lib/supabase';
 
+import StudentAttendanceModal from './StudentAttendanceModal';
+
 export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, activeExam }) {
   const [studentName, setStudentName] = useState('');
   const [nisn, setNisn] = useState('');
   const [studentClass, setStudentClass] = useState('8A');
   const [inputToken, setInputToken] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [validatedInfo, setValidatedInfo] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -26,7 +29,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
 
     const isValid = validateStudentToken(inputToken, activeTokenObj, localExamStore.getPreviousToken());
     if (isValid) {
-      onTokenValidated({
+      setValidatedInfo({
         name: studentName,
         nisn: nisn || '0080000000',
         class: studentClass,
@@ -34,6 +37,14 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
       });
     } else {
       setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
+    }
+  };
+
+  const handleAttendanceConfirmed = (attendanceData) => {
+    // Save student attendance record locally
+    localExamStore.saveAttendanceRecord(attendanceData);
+    if (onTokenValidated) {
+      onTokenValidated(attendanceData);
     }
   };
 
@@ -152,6 +163,14 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
         </p>
 
       </div>
+
+      {validatedInfo && (
+        <StudentAttendanceModal
+          studentInfo={validatedInfo}
+          examTitle={activeExam?.title}
+          onConfirm={handleAttendanceConfirmed}
+        />
+      )}
     </div>
   );
 }

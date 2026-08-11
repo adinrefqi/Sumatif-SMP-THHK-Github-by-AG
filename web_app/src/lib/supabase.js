@@ -13,6 +13,9 @@ export const supabase = isSupabaseConfigured
 const LOCAL_STORAGE_EXAMS_KEY = 'thhk_exams_db';
 const LOCAL_STORAGE_TOKENS_KEY = 'thhk_token_active';
 const LOCAL_STORAGE_PREVIOUS_TOKEN_KEY = 'thhk_token_previous';
+const LOCAL_STORAGE_ATTENDANCE_KEY = 'thhk_attendance_records';
+const LOCAL_STORAGE_OFFICIAL_MINUTES_KEY = 'thhk_official_minutes';
+const LOCAL_STORAGE_TOKEN_ACCESS_KEY = 'thhk_token_access_enabled';
 
 export const localExamStore = {
   getExams: () => {
@@ -83,5 +86,61 @@ export const localExamStore = {
     const payload = { token: tokenString.toUpperCase(), timestamp: Date.now() };
     localStorage.setItem(LOCAL_STORAGE_TOKENS_KEY, JSON.stringify(payload));
     return payload;
+  },
+  // Student Attendance Records & Signatures
+  getAttendanceRecords: () => {
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_ATTENDANCE_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+  saveAttendanceRecord: (record) => {
+    try {
+      const records = localExamStore.getAttendanceRecords();
+      const newRecords = [record, ...records.filter(r => r.nisn !== record.nisn)];
+      localStorage.setItem(LOCAL_STORAGE_ATTENDANCE_KEY, JSON.stringify(newRecords));
+      return newRecords;
+    } catch (e) {
+      console.error("Failed to save attendance record", e);
+      return [];
+    }
+  },
+  // Proctor Official Minutes (Berita Acara)
+  getOfficialMinutes: () => {
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_OFFICIAL_MINUTES_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+  saveOfficialMinutes: (minutesData) => {
+    try {
+      const payload = { ...minutesData, savedAt: new Date().toISOString() };
+      localStorage.setItem(LOCAL_STORAGE_OFFICIAL_MINUTES_KEY, JSON.stringify(payload));
+      return payload;
+    } catch (e) {
+      console.error("Failed to save official minutes", e);
+      return null;
+    }
+  },
+  // Master Token Access Control (Controlled by Super Admin)
+  isTokenAccessEnabled: () => {
+    try {
+      const value = localStorage.getItem(LOCAL_STORAGE_TOKEN_ACCESS_KEY);
+      return value !== null ? JSON.parse(value) : true; // Default enabled
+    } catch {
+      return true;
+    }
+  },
+  setTokenAccessEnabled: (isEnabled) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_ACCESS_KEY, JSON.stringify(Boolean(isEnabled)));
+      return Boolean(isEnabled);
+    } catch {
+      return true;
+    }
   }
 };

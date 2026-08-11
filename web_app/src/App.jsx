@@ -8,7 +8,7 @@ import MobilePdfViewer from './components/viewer/MobilePdfViewer';
 import ExamTimerHeader from './components/viewer/ExamTimerHeader';
 import OfflineFallbackModal from './components/viewer/OfflineFallbackModal';
 import { localExamStore } from './lib/supabase';
-import { Lock } from 'lucide-react';
+import { Lock, ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function App() {
   const [activeMode, setActiveMode] = useState('student'); // 'student' | 'admin'
@@ -16,8 +16,12 @@ export default function App() {
   const [studentSession, setStudentSession] = useState(null); // null if not logged in
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineModal, setShowOfflineModal] = useState(false);
+
   const [adminAuthPin, setAdminAuthPin] = useState('');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isAdminRole, setIsAdminRole] = useState(false); // true: Super Admin, false: Proctor
+
+  const [isTokenAccessEnabled, setIsTokenAccessEnabled] = useState(localExamStore.isTokenAccessEnabled());
   const [activeExam, setActiveExam] = useState(localExamStore.getExams()[0]);
 
   // Online / Offline Listeners
@@ -52,14 +56,13 @@ export default function App() {
   }, []);
 
   const handleExitApp = () => {
-    // Call Android Native Bridge (flutter_inappwebview callHandler) if available
     if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
       window.flutter_inappwebview.callHandler('ExambrowserBridge', 'exit');
     } else if (window.ExambrowserBridge && window.ExambrowserBridge.showExitPasswordDialog) {
       window.ExambrowserBridge.showExitPasswordDialog();
     } else {
       const pin = window.prompt('Masukkan Password Admin Keamanan untuk Keluar (Default: 12345):');
-      if (pin === '12345') {
+      if (pin === '12345' || pin === 'THHK2026') {
         alert('Password Benar. Keluar dari Aplikasi Exambrowser.');
         setStudentSession(null);
       } else if (pin) {
@@ -70,11 +73,24 @@ export default function App() {
 
   const handleAdminPinSubmit = (e) => {
     e.preventDefault();
-    if (adminAuthPin === '12345' || adminAuthPin === 'admin' || adminAuthPin === 'THHK2026') {
+    const trimmedPin = adminAuthPin.trim();
+
+    if (trimmedPin === 'THHK2026' || trimmedPin === 'admin') {
       setIsAdminAuthenticated(true);
+      setIsAdminRole(true); // Super Admin Role
+      setAdminAuthPin('');
+    } else if (trimmedPin === '12345') {
+      setIsAdminAuthenticated(true);
+      setIsAdminRole(false); // Proctor Role
+      setAdminAuthPin('');
     } else {
-      alert('PIN Admin Salah! (Default PIN: 12345)');
+      alert('PIN Salah! Masukkan PIN Proktor (12345) atau PIN Super Admin (THHK2026)');
     }
+  };
+
+  const handleToggleTokenAccess = (isEnabled) => {
+    const updated = localExamStore.setTokenAccessEnabled(isEnabled);
+    setIsTokenAccessEnabled(updated);
   };
 
   return (
@@ -109,7 +125,7 @@ export default function App() {
           </>
         )}
 
-        {/* MODE PROKTOR / ADMIN */}
+        {/* MODE PROKTOR / SUPER ADMIN */}
         {activeMode === 'admin' && (
           <div className="max-w-7xl mx-auto p-4 md:p-6">
             {!isAdminAuthenticated ? (
@@ -120,10 +136,10 @@ export default function App() {
                       <Lock className="w-5 h-5" />
                     </div>
                     <h3 className="font-extrabold text-xl text-ink-strong tracking-tight">
-                      Otorisasi Panel Proktor
+                      Otorisasi Panel Proktor & Super Admin
                     </h3>
-                    <p className="text-xs text-ink-muted mt-1.5">
-                      Masukkan PIN keamanan untuk membuka manajemen token dan unggah soal.
+                    <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
+                      Masukkan PIN Proktor Ruangan (<strong>12345</strong>) atau PIN Super Admin (<strong>THHK2026</strong>)
                     </p>
                   </div>
 
@@ -136,26 +152,65 @@ export default function App() {
                       required
                       value={adminAuthPin}
                       onChange={(e) => setAdminAuthPin(e.target.value)}
-                      placeholder="PIN Admin (Default: 12345)"
+                      placeholder="PIN Ruang / PIN Super Admin"
                       className="w-full px-4 py-2.5 bg-console-faint border border-console-line rounded-lg text-center font-mono font-bold text-lg text-ink-strong placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition"
                     />
                     <button
                       type="submit"
                       className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-[11px] uppercase tracking-widest rounded-lg transition-colors"
                     >
-                      Buka Panel Proktor
+                      Masuk Otorisasi Panel
                     </button>
                   </form>
                 </div>
               </div>
             ) : (
               <div className="space-y-6 animate-fadeUp">
+                
+                {/* Mode Role Header Badge */}
+                <div className="flex items-center justify-between bg-console-panel border border-console-line rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {isAdminRole ? (
+                      <ShieldCheck className="w-5 h-5 text-accent" />
+                    ) : (
+                      <UserCheck className="w-5 h-5 text-ok" />
+                    )}
+                    <div>
+                      <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider">
+                        {isAdminRole ? 'SUPER ADMIN PANEL (MANAJEMEN UTAMA)' : 'PANEL PROKTOR RUANG UJIAN'}
+                      </h4>
+                      <p className="text-[10px] text-ink-muted">
+                        {isAdminRole
+                          ? 'Akses penuh unggah PDF/Google Drive & kontrol saklar token'
+                          : 'Akses wajib Berita Acara, Rilis Token, & Rekap TTD Siswa'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsAdminAuthenticated(false)}
+                    className="text-[10px] font-bold uppercase tracking-wider text-bad border border-bad/30 hover:bg-bad/10 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Keluar Admin
+                  </button>
+                </div>
+
+                {/* SUPER ADMIN COMPONENT (Upload PDF / GDrive & Master Switch) */}
+                {isAdminRole && (
+                  <PdfUploader
+                    onExamCreated={(newExam) => setActiveExam(newExam)}
+                    isTokenAccessEnabled={isTokenAccessEnabled}
+                    onToggleTokenAccess={handleToggleTokenAccess}
+                  />
+                )}
+
+                {/* PROCTOR & MONITOR COMPONENT */}
                 <ProctorTokenMonitor
                   activeTokenObj={activeTokenObj}
                   onTokenUpdate={(updatedObj) => setActiveTokenObj(updatedObj)}
-                />
-                <PdfUploader
-                  onExamCreated={(newExam) => setActiveExam(newExam)}
+                  activeExam={activeExam}
+                  isTokenAccessEnabled={isTokenAccessEnabled}
+                  isAdminRole={isAdminRole}
                 />
 
               </div>

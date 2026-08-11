@@ -24,9 +24,11 @@ graph TD
 ## 2. Struktur Proyek & Komponen Utama
 
 ### A. Web Application (`web_app/`)
-- **`lib/supabase.js`**: Client SDK Supabase terintegrasi dengan environment variables `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`.
-- **`components/admin/PdfUploader.jsx`**: Modul unggah file PDF naskah soal ke Supabase Storage + pengisian metadata ujian (Mapel, Kelas, Durasi).
-- **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time dengan animasi countdown **15-Menit Rotasi Token** dan tombol emergency reset sesi siswa.
+- **`lib/supabase.js`**: Client SDK Supabase & local stores helper (termasuk penyimpanan presensi siswa, TTD digital, berita acara, dan status kuncian token).
+- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk unggah file PDF lokal / input Link Google Drive + Master Switch "Buka/Kunci Akses Token Proktor".
+- **`components/admin/OfficialMinutesForm.jsx`**: Form Berita Acara Ujian yang wajib diisi Proktor saat login awal sebelum membuka rilis token.
+- **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time dengan tab **Rilis Token**, **Rekap Presensi & TTD Digital Siswa**, serta **View/Edit Berita Acara**.
+- **`components/viewer/StudentAttendanceModal.jsx`**: Modal Canvas Tanda Tangan Digital yang wajib diisi siswa setelah token 6-karakter divalidasi.
 - **`components/viewer/MobilePdfViewer.jsx`**: Penampil naskah soal PDF berbasis `pdfjs-dist` dengan gestur *pinch-to-zoom*, *bookmark* halaman bacaan, dan pengatur skala cepat (A-/A/A+).
 - **`components/viewer/StudentTokenScreen.jsx`**: Form konfirmasi data peserta & masukan Token Ujian 6-karakter.
 - **`components/viewer/ExamTimerHeader.jsx`**: Barikade atas berisi Jam Realtime, Indikator Baterai (via JS Bridge), Timer Hitung Mundur, dan Tombol "Bantuan Pengawas".
