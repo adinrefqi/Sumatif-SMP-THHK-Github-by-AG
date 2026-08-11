@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:kiosk_mode/kiosk_mode.dart';
 import 'services/security_service.dart';
 import 'widgets/exit_password_dialog.dart';
@@ -48,14 +47,7 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _initSecurityGuard() async {
-    // 1. Enable FLAG_SECURE to block Screenshots & Screen Recording
-    try {
-      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-    } catch (e) {
-      print("FLAG_SECURE error: $e");
-    }
-
-    // 2. Hide System Bars & Enable Immersive Sticky Mode
+    // 1. Hide System Bars & Enable Immersive Sticky Mode
     await SystemChrome.setEnabledSystemUIMode(SystemUIMode.immersiveSticky);
 
     // 3. Enable Kiosk Mode

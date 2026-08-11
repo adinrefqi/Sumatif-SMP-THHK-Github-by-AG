@@ -10,7 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_inappwebview: ^6.0.0
-  flutter_windowmanager: ^0.2.0
   kiosk_mode: ^3.0.0
   audioplayers: ^6.0.0
   battery_plus: ^6.0.0
