@@ -5,8 +5,9 @@ import {
   Sun, Moon, Eye, Sparkles
 } from 'lucide-react';
 
-// Configure pdfjs worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure pdfjs worker — bundled locally so the exam PDF renders even offline
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export default function MobilePdfViewer({ pdfUrl }) {
   const [pdfDoc, setPdfDoc] = useState(null);

@@ -9,10 +9,17 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
 
   // Sync with Android Native Bridge if available
   useEffect(() => {
-    if (window.ExambrowserBridge && window.ExambrowserBridge.getBatteryLevel) {
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      window.flutter_inappwebview
+        .callHandler('ExambrowserBridge', 'getBattery')
+        .then((level) => {
+          if (typeof level === 'number') setBatteryLevel(level);
+        })
+        .catch(() => {});
+    } else if (window.ExambrowserBridge && window.ExambrowserBridge.getBatteryLevel) {
       try {
         const level = window.ExambrowserBridge.getBatteryLevel();
-        setBatteryLevel(level);
+        if (typeof level === 'number') setBatteryLevel(level);
       } catch (e) {}
     }
   }, []);

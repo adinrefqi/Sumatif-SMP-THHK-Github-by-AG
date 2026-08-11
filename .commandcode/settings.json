@@ -5,7 +5,10 @@
       "Shell(dir:*)",
       "Shell(type:*)",
       "Shell(findstr:*)",
-      "Shell(cmd:*)"
+      "Shell(cmd:*)",
+      "Shell(node -e \"const p=require('./node_modules/pdfjs-dist/package.json'); console.log(p.version)\")",
+      "Shell(npx vite build 2>&1)",
+      "powershell"
     ],
     "deny": [],
     "defaultMode": "default"

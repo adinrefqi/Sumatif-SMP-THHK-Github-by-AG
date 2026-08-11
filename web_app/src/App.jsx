@@ -52,11 +52,13 @@ export default function App() {
   }, []);
 
   const handleExitApp = () => {
-    // Call Android Native Bridge if available
-    if (window.ExambrowserBridge && window.ExambrowserBridge.showExitPasswordDialog) {
+    // Call Android Native Bridge (flutter_inappwebview callHandler) if available
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      window.flutter_inappwebview.callHandler('ExambrowserBridge', 'exit');
+    } else if (window.ExambrowserBridge && window.ExambrowserBridge.showExitPasswordDialog) {
       window.ExambrowserBridge.showExitPasswordDialog();
     } else {
-      const pin = prompt('Masukkan Password Admin Keamanan untuk Keluar (Default: 12345):');
+      const pin = window.prompt('Masukkan Password Admin Keamanan untuk Keluar (Default: 12345):');
       if (pin === '12345') {
         alert('Password Benar. Keluar dari Aplikasi Exambrowser.');
         setStudentSession(null);

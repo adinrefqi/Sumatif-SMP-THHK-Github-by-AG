@@ -5,6 +5,7 @@ import { localExamStore } from '../../lib/supabase';
 
 export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
   const [timeInfo, setTimeInfo] = useState(getTimeRemainingInTokenCycle(activeTokenObj?.timestamp));
+  const [hasExpired, setHasExpired] = useState(false);
   const [mockStudents, setMockStudents] = useState([
     { id: 1, name: 'Ahmad Fauzi', nisn: '0081234567', class: '8A', status: 'ACTIVE', violations: 0, timeEntered: '08:00' },
     { id: 2, name: 'Budi Santoso', nisn: '0081234568', class: '8A', status: 'ACTIVE', violations: 0, timeEntered: '08:02' },
@@ -14,22 +15,32 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
 
   // Interval timer for 15-min countdown
   useEffect(() => {
+    if (!activeTokenObj?.timestamp) {
+      // No valid timestamp: keep countdown frozen, do not auto-refresh endlessly
+      setTimeInfo({ minutes: 15, seconds: 0, percentage: 100, isExpired: false });
+      setHasExpired(false);
+      return undefined;
+    }
+
     const timer = setInterval(() => {
       const remaining = getTimeRemainingInTokenCycle(activeTokenObj?.timestamp);
       setTimeInfo(remaining);
 
-      // Auto-refresh token when expired
-      if (remaining.isExpired) {
+      // Auto-refresh token once when expired
+      if (remaining.isExpired && !hasExpired) {
+        setHasExpired(true);
         handleManualRefresh();
       }
     }, 1000);
 
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTokenObj]);
 
   const handleManualRefresh = () => {
     const newTokenStr = generateToken();
     const updatedObj = localExamStore.setActiveToken(newTokenStr);
+    setHasExpired(false);
     if (onTokenUpdate) {
       onTokenUpdate(updatedObj);
     }

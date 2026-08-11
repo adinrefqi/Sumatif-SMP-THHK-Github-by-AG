@@ -51,8 +51,8 @@ export const localExamStore = {
         }
       }
     } catch (e) {}
-    // Default fallback token
-    return { token: 'THHK26', timestamp: Date.now() };
+    // No valid token stored
+    return null;
   },
   setActiveToken: (tokenString) => {
     const payload = { token: tokenString.toUpperCase(), timestamp: Date.now() };

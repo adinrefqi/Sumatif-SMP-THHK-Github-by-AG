@@ -24,7 +24,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
     }
 
     const isValid = validateStudentToken(inputToken, activeTokenObj);
-    if (isValid || inputToken.toUpperCase() === 'THHK26' || inputToken.toUpperCase() === '123456') {
+    if (isValid) {
       onTokenValidated({
         name: studentName,
         nisn: nisn || '0080000000',
