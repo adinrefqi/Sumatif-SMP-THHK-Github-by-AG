@@ -18,7 +18,8 @@
 
 ## Log Aktivitas Terbaru
 
-- **Implementasi Super Admin & Presensi TTD Siswa (`web_app`):**
+  - Menambahkan konfigurasi **Signed Release APK Android**: Keystore (`upload-keystore.jks`) & `key.properties` resmi SMP THHK Tegal.
+  - Menambahkan publikasi otomatis **GitHub Release v1.0.0** untuk mengunduh `.apk` resmi yang telah ditandatangani digital (*Signed Official Release*).
   - Menambahkan fitur **Batch Upload Multi-File PDF** dengan Smart Filename Parser (deteksi otomatis mapel & kelas dari nama file) dan Tabel Review Batch.
   - Menambahkan **Arsitektur Tepat 3 Ruang Ujian (Ruang 1, Ruang 2, Ruang 3)**: Pemilihan Ruang Ujian pada login Proktor (PIN `12345`) dan form presensi Siswa.
   - Menambahkan **Monitoring Terpadu 3 Ruangan** pada Super Admin Dashboard untuk memantau status Berita Acara dan kehadiran peserta di Ruang 1, 2, dan 3.
