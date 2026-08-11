@@ -149,14 +149,16 @@ export default function App() {
               <div className="min-h-[70vh] flex items-center justify-center">
                 <div className="w-full max-w-sm animate-fadeUp">
                   <div className="mb-6 text-center">
-                    <div className="w-12 h-12 bg-accent/10 border border-accent/25 text-accent rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <Lock className="w-5 h-5" />
-                    </div>
+                    <img
+                      src="/logo.png"
+                      alt="Logo SMP THHK Tegal"
+                      className="w-16 h-16 mx-auto mb-3 object-contain drop-shadow"
+                    />
                     <h3 className="font-extrabold text-xl text-ink-strong tracking-tight">
                       Otorisasi Panel Proktor & Super Admin
                     </h3>
                     <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-                      Masukkan PIN Proktor Ruangan (<strong>12345</strong>) atau PIN Super Admin (<strong>THHK2026</strong>)
+                      SMP THHK TEGAL • PIN Proktor Ruangan (<strong>12345</strong>) atau PIN Super Admin (<strong>THHK2026</strong>)
                     </p>
                   </div>
 

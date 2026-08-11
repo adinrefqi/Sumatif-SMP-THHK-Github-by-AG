@@ -78,14 +78,19 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
 
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/30 bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-label mb-4">
+          <img
+            src="/logo.png"
+            alt="Logo SMP THHK Tegal"
+            className="w-20 h-20 mx-auto mb-3 object-contain drop-shadow-lg filter"
+          />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/30 bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-label mb-2">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Sesi Ujian Terproteksi</span>
+            <span>SMP THHK TEGAL • Sesi Terproteksi</span>
           </div>
           <h2 className="font-extrabold text-2xl text-ink-strong tracking-tight">
             Masuk Sesi Ujian
           </h2>
-          <p className="text-xs text-ink-muted mt-1.5 font-semibold">
+          <p className="text-xs text-ink-muted mt-1 font-semibold">
             {chosenExam?.title || activeExam?.title || 'Sumatif Ujian Sekolah SMP THHK'}
           </p>
         </div>

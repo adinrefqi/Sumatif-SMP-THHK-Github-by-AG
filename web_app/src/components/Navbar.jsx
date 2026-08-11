@@ -6,16 +6,14 @@ export default function Navbar({ activeMode, setActiveMode, isOnline, onExitApp 
     <header className="bg-console-panel border-b border-console-line sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         {/* Left: Brand */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 shrink-0 bg-accent text-console-bg rounded-md flex items-center justify-center font-mono font-extrabold text-[11px] tracking-tight">
-            TH
-          </div>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src="/logo.png" alt="Logo SMP THHK Tegal" className="w-8 h-8 shrink-0 object-contain drop-shadow" />
           <div className="min-w-0">
-            <h1 className="font-bold text-sm text-ink-strong leading-tight truncate">
-              SMP THHK — Ujian Sumatif
+            <h1 className="font-extrabold text-sm text-ink-strong leading-tight truncate">
+              SMP THHK TEGAL
             </h1>
-            <p className="text-[10px] uppercase tracking-label text-ink-faint font-semibold hidden sm:block">
-              Exambrowser • Standar ANBK
+            <p className="text-[10px] uppercase tracking-label text-accent font-bold hidden sm:block">
+              Ujian Sumatif • Exambrowser ANBK
             </p>
           </div>
         </div>
