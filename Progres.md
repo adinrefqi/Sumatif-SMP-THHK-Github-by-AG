@@ -19,7 +19,8 @@
 ## Log Aktivitas Terbaru
 
 - **Implementasi Super Admin & Presensi TTD Siswa (`web_app`):**
-  - Menambahkan autentikasi Super Admin (PIN: `THHK2026`) dengan fitur unggah PDF lokal / link Google Drive, Master Switch "Buka/Kunci Akses Rilis Token", serta **Inspector Cek Tampilan & Keterbacaan PDF Siswa**.
+  - Menambahkan fitur **Batch Upload Multi-File PDF** dengan Smart Filename Parser (deteksi otomatis mapel & kelas dari nama file) dan Tabel Review Batch.
+  - Menambahkan modul **Master Exam Bank List** untuk memilih naskah soal aktif sesi ujian (*Set Active Exam*), uji pratinjau, dan hapus naskah.
   - Menambahkan Gate Wajib Berita Acara Ujian saat Proktor (PIN: `12345`) pertama kali login sebelum membuka rilis token.
   - Menambahkan modal Canvas Tanda Tangan Digital Siswa setelah verifikasi token 6-karakter.
   - Menambahkan tab Rekap Presensi & Tanda Tangan Digital Siswa di Panel Proktor.

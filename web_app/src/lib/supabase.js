@@ -44,6 +44,32 @@ export const localExamStore = {
       console.error("Failed to save to local storage", e);
     }
   },
+  deleteExam: (examId) => {
+    try {
+      const exams = localExamStore.getExams();
+      const filtered = exams.filter(e => e.id !== examId);
+      localExamStore.saveExams(filtered);
+      return filtered;
+    } catch (e) {
+      console.error("Failed to delete exam", e);
+      return localExamStore.getExams();
+    }
+  },
+  getActiveExamId: () => {
+    try {
+      return localStorage.getItem('thhk_active_exam_id');
+    } catch {
+      return null;
+    }
+  },
+  setActiveExamId: (examId) => {
+    try {
+      localStorage.setItem('thhk_active_exam_id', examId);
+      return examId;
+    } catch {
+      return examId;
+    }
+  },
   getActiveToken: () => {
     try {
       const data = localStorage.getItem(LOCAL_STORAGE_TOKENS_KEY);

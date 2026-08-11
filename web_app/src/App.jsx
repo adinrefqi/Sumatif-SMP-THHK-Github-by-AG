@@ -195,12 +195,14 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* SUPER ADMIN COMPONENT (Upload PDF / GDrive & Master Switch) */}
+                {/* SUPER ADMIN COMPONENT (Upload PDF / GDrive / Batch & Master Switch) */}
                 {isAdminRole && (
                   <PdfUploader
                     onExamCreated={(newExam) => setActiveExam(newExam)}
                     isTokenAccessEnabled={isTokenAccessEnabled}
                     onToggleTokenAccess={handleToggleTokenAccess}
+                    activeExam={activeExam}
+                    onSelectActiveExam={(selectedExam) => setActiveExam(selectedExam)}
                   />
                 )}
 

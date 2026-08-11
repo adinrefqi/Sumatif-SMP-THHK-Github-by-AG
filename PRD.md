@@ -67,6 +67,7 @@ Sistem ini menerapkan **Metode Hibrida**:
 6. **Integrasi Google Drive PDF & Master Switch Token:** Pilihan input link GDrive untuk soal PDF dan penguncian rilis token oleh Super Admin.
 7. **Gate Berita Acara Proktor:** Kewajiban proktor mengisi berita acara sebelum membuka rilis token & monitoring.
 8. **Super Admin PDF Readability Inspector:** Fitur uji pratinjau tampilan naskah soal PDF di layar HP siswa untuk memastikan dokumen terbaca jelas sebelum rilis token.
+9. **Batch Multi-File PDF Upload & Master Exam Bank:** Fitur unggah banyak file PDF sekaligus dengan smart filename parser dan manajemen bank soal master.
 
 ---
 
