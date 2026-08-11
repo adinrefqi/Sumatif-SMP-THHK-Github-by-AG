@@ -234,7 +234,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
             </div>
           </div>
           <a
-            href="https://github.com/adinrefqi/Sumatif-SMP-THHK-Github-by-AG/releases/download/release-v1.0.0/app-release.apk"
+            href="https://github.com/adinrefqi/Sumatif-SMP-THHK-Github-by-AG/releases"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3 py-1.5 bg-accent hover:bg-accent-soft text-console-bg font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-colors shrink-0 flex items-center gap-1"

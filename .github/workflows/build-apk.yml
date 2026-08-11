@@ -9,10 +9,15 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-flutter-apk:
     name: Build Flutter Exambrowser APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -37,7 +42,6 @@ jobs:
           flutter pub get
 
       - name: Bootstrap Gradle Wrapper
-        # flutter build requires android/gradlew; bootstrap it from the Android Gradle Plugin
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.3'
@@ -51,26 +55,27 @@ jobs:
         run: |
           cd flutter_app
           flutter build apk --release --no-tree-shake-icons
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/SMP-THHK-Exambrowser.apk
 
       - name: Upload Flutter APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SMP-THHK-Exambrowser-Flutter-APK
-          path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
+          path: flutter_app/build/app/outputs/flutter-apk/SMP-THHK-Exambrowser.apk
 
       - name: Create Release & Attach Signed APK
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: release-v1.0.0
-          name: "SMP THHK Exambrowser Signed Release v1.0.0"
+          tag_name: v1.0.${{ github.run_number }}
+          name: "SMP THHK Exambrowser Signed Release v1.0.${{ github.run_number }}"
           body: |
             ### 📱 Aplikasi Exambrowser SMP THHK Tegal (Versi Signed Release)
-            - **Versi**: v1.0.0
+            - **Versi**: v1.0.${{ github.run_number }}
             - **Fitur Utama**: Multi-Active Exams, Tepat 3 Ruang Ujian (Ruang 1, 2, 3), Presensi TTD Digital, Berita Acara Proktor, Kiosk Security Lock, & Logo Resmi SMP THHK Tegal.
             - **File**: `SMP-THHK-Exambrowser.apk` (Signed Official Release)
           files: |
-            flutter_app/build/app/outputs/flutter-apk/app-release.apk
+            flutter_app/build/app/outputs/flutter-apk/SMP-THHK-Exambrowser.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
