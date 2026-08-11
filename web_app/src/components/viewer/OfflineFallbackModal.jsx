@@ -16,7 +16,7 @@ export default function OfflineFallbackModal({ isOpen, onClose }) {
         </h3>
 
         <p className="text-xs text-ink-muted mb-4 leading-relaxed">
-          Jangan khawatir. Naskah soal PDF yang telah dimuat tetap dapat Anda baca di layar. Silakan lanjutkan pengerjaan pada Lembar Jawab Kertas (LJK).
+          Jangan khawatir. Naskah soal PDF yang telah dimuat tetap dapat Anda baca di layar.
         </p>
 
         <div className="p-3 bg-ok/10 border border-ok/25 rounded-lg text-[11px] text-ok font-bold mb-5 flex items-center gap-2 text-left">

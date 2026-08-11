@@ -27,6 +27,8 @@ class SecurityService {
       );
     } catch (e) {
       print("Error playing siren alarm: $e");
+      // Reset flag so alarm can be retried on next lifecycle event
+      _isAlarmPlaying = false;
     }
   }
 

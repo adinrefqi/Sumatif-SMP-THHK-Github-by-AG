@@ -15,27 +15,27 @@ export function generateToken() {
 }
 
 export function getTimeRemainingInTokenCycle(timestamp) {
-  if (!timestamp) return { minutes: 15, seconds: 0, percentage: 100, isExpired: true };
-  
+  if (!timestamp) return { minutes: 0, seconds: 0, percentage: 0, isExpired: true };
+
   const elapsed = Date.now() - timestamp;
   const remainingMs = TOKEN_INTERVAL_MS - elapsed;
-  
+
   if (remainingMs <= 0) {
     return { minutes: 0, seconds: 0, percentage: 0, isExpired: true };
   }
-  
+
   const minutes = Math.floor(remainingMs / 60000);
   const seconds = Math.floor((remainingMs % 60000) / 1000);
   const percentage = Math.max(0, Math.min(100, (remainingMs / TOKEN_INTERVAL_MS) * 100));
-  
+
   return { minutes, seconds, percentage, isExpired: false };
 }
 
 export function validateStudentToken(inputToken, activeTokenObj, previousTokenObj = null) {
   if (!inputToken || !activeTokenObj) return false;
-  
+
   const cleanInput = inputToken.trim().toUpperCase();
-  
+
   // Check active token
   if (cleanInput === activeTokenObj.token.toUpperCase()) {
     const elapsed = Date.now() - activeTokenObj.timestamp;
@@ -44,7 +44,7 @@ export function validateStudentToken(inputToken, activeTokenObj, previousTokenOb
       return true;
     }
   }
-  
+
   // Check previous token (within grace period)
   if (previousTokenObj && cleanInput === previousTokenObj.token.toUpperCase()) {
     const elapsed = Date.now() - previousTokenObj.timestamp;
@@ -52,6 +52,6 @@ export function validateStudentToken(inputToken, activeTokenObj, previousTokenOb
       return true;
     }
   }
-  
+
   return false;
 }

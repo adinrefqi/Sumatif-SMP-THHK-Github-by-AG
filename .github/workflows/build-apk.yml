@@ -1,4 +1,4 @@
-name: Build Android APK (Flutter)
+name: Build Android APK (Flutter & Native WebView)
 
 on:
   push:
@@ -10,7 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build-flutter-apk:
+    name: Build Flutter Exambrowser APK
     runs-on: ubuntu-latest
 
     steps:
@@ -35,13 +36,57 @@ jobs:
           cd flutter_app
           flutter pub get
 
-      - name: Build Android APK
+      - name: Bootstrap Gradle Wrapper
+        # flutter build requires android/gradlew; bootstrap it from the Android Gradle Plugin
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.3'
+
+      - name: Generate Gradle Wrapper
+        run: |
+          cd flutter_app/android
+          gradle wrapper --gradle-version 8.3
+
+      - name: Build Flutter APK
         run: |
           cd flutter_app
           flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload APK Artifact
+      - name: Upload Flutter APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SMP-THHK-Exambrowser-APK
+          name: SMP-THHK-Exambrowser-Flutter-APK
           path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
+
+  build-native-apk:
+    name: Build Native WebView APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate Gradle Wrapper
+        run: |
+          cd android_app
+          gradle wrapper --gradle-version 8.2
+
+      - name: Build Native Android APK
+        run: |
+          cd android_app
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload Native APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SMP-THHK-Exambrowser-Native-APK
+          path: android_app/app/build/outputs/apk/release/app-release.apk

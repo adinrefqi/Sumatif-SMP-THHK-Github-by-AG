@@ -25,6 +25,10 @@ android_app/build/
 android_app/app/build/
 android_app/local.properties
 android_app/.idea/
+flutter_app/android/.gradle/
+flutter_app/android/app/build/
+flutter_app/build/
+flutter_app/.dart_tool/
 
 # IDE / System
 .DS_Store

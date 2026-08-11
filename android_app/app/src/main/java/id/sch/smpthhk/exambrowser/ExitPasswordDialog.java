@@ -10,6 +10,7 @@ public class ExitPasswordDialog {
 
     public interface OnPasswordValidatedListener {
         void onSuccess();
+
         void onFailure();
     }
 
@@ -21,7 +22,7 @@ public class ExitPasswordDialog {
         final EditText input = new EditText(context);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         input.setHint("Masukkan Password...");
-        
+
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT);
@@ -31,9 +32,11 @@ public class ExitPasswordDialog {
         builder.setPositiveButton("Keluar Ujian", (dialog, which) -> {
             String enteredPassword = input.getText().toString().trim();
             if ("12345".equals(enteredPassword) || "THHK2026".equals(enteredPassword)) {
-                if (listener != null) listener.onSuccess();
+                if (listener != null)
+                    listener.onSuccess();
             } else {
-                if (listener != null) listener.onFailure();
+                if (listener != null)
+                    listener.onFailure();
             }
         });
 

@@ -6,6 +6,7 @@ import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.webkit.JavascriptInterface;
 
@@ -48,12 +49,19 @@ public class WebBridge {
                 }
 
                 if (mediaPlayer == null) {
-                    // Create alarm beep sound using ToneGenerator / MediaPlayer
-                    mediaPlayer = MediaPlayer.create(context, android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI);
-                    if (mediaPlayer == null) {
-                        mediaPlayer = MediaPlayer.create(context, android.provider.Settings.System.DEFAULT_RINGTONE_URI);
+                    Uri alarmUri = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI;
+                    if (alarmUri == null) {
+                        alarmUri = android.provider.Settings.System.DEFAULT_RINGTONE_URI;
+                    }
+                    if (alarmUri != null) {
+                        mediaPlayer = MediaPlayer.create(context, alarmUri);
                     }
                     if (mediaPlayer != null) {
+                        // Use explicit audio attributes for modern API (avoids deprecation warning)
+                        mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build());
                         mediaPlayer.setLooping(true);
                     }
                 }

@@ -14,6 +14,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,8 +33,7 @@ public class MainActivity extends AppCompatActivity {
         // 1. FLAG_SECURE: Block Screenshots & Screen Recording
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-        );
+                WindowManager.LayoutParams.FLAG_SECURE);
 
         // 2. Hide System Bars & Immersive Fullscreen (Android 14+ SDK 34 Compatible)
         hideSystemUI();
@@ -53,6 +53,15 @@ public class MainActivity extends AppCompatActivity {
         // 5. Initialize Security Monitoring
         securityGuard = new SecurityGuard(this);
         securityGuard.startMonitoring();
+
+        // 6. Register Back-press callback (replaces deprecated onBackPressed for API
+        // 33+)
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                promptExitPasswordDialog();
+            }
+        });
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -74,8 +83,8 @@ public class MainActivity extends AppCompatActivity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
+            public boolean shouldOverrideUrlLoading(WebView view, android.net.Uri url) {
+                view.loadUrl(url.toString());
                 return true;
             }
         });
@@ -98,8 +107,7 @@ public class MainActivity extends AppCompatActivity {
                             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            );
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         }
     }
 
@@ -130,19 +138,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        // Prevent default Back button action - prompt password dialog instead
-        promptExitPasswordDialog();
-    }
-
     public void promptExitPasswordDialog() {
         ExitPasswordDialog.show(this, new ExitPasswordDialog.OnPasswordValidatedListener() {
             @Override
             public void onSuccess() {
                 try {
                     stopLockTask();
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 Toast.makeText(MainActivity.this, "Berhasil keluar dari mode ujian.", Toast.LENGTH_SHORT).show();
                 finishAndRemoveTask();
                 android.os.Process.killProcess(android.os.Process.myPid());

@@ -36,7 +36,6 @@ Sistem ini menerapkan **Metode Hibrida**:
 - Memantau Token Rilis 15-menit yang diperbarui secara otomatis.
 - Memantau status hadir/sesi siswa dan menerima sinyal "Panggil Pengawas".
 - Melakukan *Emergency Session Reset* jika HP siswa bermasalah.
-- Mengunduh/mencetak template Lembar Jawab Kertas (LJK) A4/F4 khas SMP THHK.
 
 ---
 
@@ -59,7 +58,6 @@ Sistem ini menerapkan **Metode Hibrida**:
 2. **Stimulus Bookmark System:** Menyimpan pin halaman bacaan panjang (stimulus ANBK) untuk lompat halaman 1-tap.
 3. **Rotasi Token 15-Menit:** Sinkronisasi real-time via Supabase Realtime dengan *grace period* 2 menit.
 4. **Offline Fallback UI:** Antarmuka peringatan koneksi terputus yang menjaga naskah PDF tetap terbuka tanpa layar blank Chrome.
-5. **Generator LJK Printable:** Pembuat template LJK A4/F4 berlogo SMP THHK.
 
 ---
 

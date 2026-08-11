@@ -72,13 +72,15 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      // Trigger Siren Alarm at 95% volume when student attempts to switch apps
+    if (state == AppLifecycleState.paused) {
+      // Trigger Siren Alarm at 95% volume only when student actually switches away
       _securityService.playSirenAlarm();
     } else if (state == AppLifecycleState.resumed) {
       _securityService.stopSirenAlarm();
       SystemChrome.setEnabledSystemUIMode(SystemUIMode.immersiveSticky);
     }
+    // Note: 'inactive' (e.g. showing the exit-password dialog) does NOT trigger
+    // the siren, so the proctor can open dialogs without setting off the alarm.
   }
 
   void _showExitPasswordDialog() {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { KeyRound, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { validateStudentToken } from '../../utils/tokenRotationManager';
+import { localExamStore } from '../../lib/supabase';
 
 export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, activeExam }) {
   const [studentName, setStudentName] = useState('');
@@ -18,12 +19,12 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
       return;
     }
 
-    if (!inputToken.trim() || inputToken.length < 5) {
+    if (!inputToken.trim() || inputToken.length !== 6) {
       setErrorMsg('Silakan masukkan 6 Karakter Token Ujian dengan benar');
       return;
     }
 
-    const isValid = validateStudentToken(inputToken, activeTokenObj);
+    const isValid = validateStudentToken(inputToken, activeTokenObj, localExamStore.getPreviousToken());
     if (isValid) {
       onTokenValidated({
         name: studentName,
@@ -147,7 +148,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
 
         <p className="text-[11px] text-ink-faint text-center mt-4 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-ok" />
-          <span>Exambrowser Protected • Jawaban diisi pada LJK Kertas</span>
+          <span>Exambrowser Protected • Mode Pembaca Naskah Soal</span>
         </p>
 
       </div>

@@ -8,7 +8,7 @@
 | Modul | Status | Keterangan |
 |---|---|---|
 | Perencanaan & Dokumen PRD | ✅ Selesai | `PRD.md`, `Desain.md`, `Progres.md` lengkap. |
-| React + Vite Frontend App (`web_app`) | ✅ Selesai | Mobile Touch PDF Viewer, Rotasi Token 15-Menit, LJK Printable Generator, Supabase Client, Offline Fallback. |
+| React + Vite Frontend App (`web_app`) | ✅ Selesai | Mobile Touch PDF Viewer, Rotasi Token 15-Menit, Supabase Client, Offline Fallback. |
 | Supabase Cloud Integration | ✅ Selesai | Bucket Storage & Realtime Token Ready. |
 | Native Android Kiosk App (`android_app`) | ✅ Selesai | Package `id.sch.smpthhk.exambrowser` (SDK 34 / Android 14+), `FLAG_SECURE`, LockTask, Alarm 95%, Password `12345`. |
 | **Flutter Kiosk App (`flutter_app`)** | ✅ Selesai | Flutter InAppWebView, `FLAG_SECURE`, Kiosk Mode, Alarm Audio 95%, Exit Password `12345`. |
@@ -21,8 +21,7 @@
 ### [2026-08-11]
 - **Redesign UI/UX Web App (`web_app`):**
   - Mengubah total bahasa visual menjadi *Operational Console* (dark utility): latar gelap `#0B0F14`, panel `#11171F`, aksen kuning ANBK `#F0B90B`, font mono JetBrains Mono untuk token/timer.
-  - Mendesain ulang seluruh komponen: Navbar, StudentTokenScreen, ExamTimerHeader, MobilePdfViewer, OfflineFallbackModal, App shell (admin auth), ProctorTokenMonitor, PdfUploader, LjkPrinter.
-  - Lembar cetak LJK tetap putih agar siap cetak di kertas A4/F4.
+  - Mendesain ulang seluruh komponen: Navbar, StudentTokenScreen, ExamTimerHeader, MobilePdfViewer, OfflineFallbackModal, App shell (admin auth), ProctorTokenMonitor, PdfUploader.
   - Build produksi terverifikasi sukses (`vite build`).
 - **Implementasi Modul Flutter Exambrowser (`flutter_app/`):**
   - Membuat `pubspec.yaml` dengan dependensi `flutter_inappwebview`, `flutter_windowmanager`, `kiosk_mode`, `audioplayers`, dan `battery_plus`.

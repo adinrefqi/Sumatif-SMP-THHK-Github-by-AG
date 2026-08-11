@@ -68,7 +68,7 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
             {studentInfo?.name || 'Siswa SMP THHK'}
           </div>
           <div className="text-[9px] uppercase tracking-wider text-ink-faint font-semibold">
-            Kelas {studentInfo?.class || '8A'} • LJK Kertas
+            Kelas {studentInfo?.class || '8A'} • Exambrowser
           </div>
         </div>
       </div>

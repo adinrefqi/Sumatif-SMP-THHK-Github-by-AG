@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
 import { localExamStore } from '../../lib/supabase';
 
 export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
   const [timeInfo, setTimeInfo] = useState(getTimeRemainingInTokenCycle(activeTokenObj?.timestamp));
+  const hasExpiredRef = useRef(false);
   const [hasExpired, setHasExpired] = useState(false);
+
+  // Reset expiry flag whenever a new token arrives (fixes stale-closure loop)
+  useEffect(() => {
+    hasExpiredRef.current = false;
+    setHasExpired(false);
+  }, [activeTokenObj?.token]);
   const [mockStudents, setMockStudents] = useState([
     { id: 1, name: 'Ahmad Fauzi', nisn: '0081234567', class: '8A', status: 'ACTIVE', violations: 0, timeEntered: '08:00' },
     { id: 2, name: 'Budi Santoso', nisn: '0081234568', class: '8A', status: 'ACTIVE', violations: 0, timeEntered: '08:02' },
@@ -18,6 +25,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
     if (!activeTokenObj?.timestamp) {
       // No valid timestamp: keep countdown frozen, do not auto-refresh endlessly
       setTimeInfo({ minutes: 15, seconds: 0, percentage: 100, isExpired: false });
+      hasExpiredRef.current = false;
       setHasExpired(false);
       return undefined;
     }
@@ -26,8 +34,9 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
       const remaining = getTimeRemainingInTokenCycle(activeTokenObj?.timestamp);
       setTimeInfo(remaining);
 
-      // Auto-refresh token once when expired
-      if (remaining.isExpired && !hasExpired) {
+      // Auto-refresh token once when expired (use ref to avoid stale closure)
+      if (remaining.isExpired && !hasExpiredRef.current) {
+        hasExpiredRef.current = true;
         setHasExpired(true);
         handleManualRefresh();
       }
@@ -40,6 +49,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
   const handleManualRefresh = () => {
     const newTokenStr = generateToken();
     const updatedObj = localExamStore.setActiveToken(newTokenStr);
+    hasExpiredRef.current = false;
     setHasExpired(false);
     if (onTokenUpdate) {
       onTokenUpdate(updatedObj);

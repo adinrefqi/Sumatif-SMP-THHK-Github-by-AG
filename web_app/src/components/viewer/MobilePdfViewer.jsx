@@ -249,14 +249,14 @@ export default function MobilePdfViewer({ pdfUrl }) {
           <div className="max-w-2xl w-full bg-console-panel border border-console-line rounded-xl shadow-panel p-6 md:p-8 my-4 animate-fadeUp">
             <div className="border-b border-console-line pb-4 mb-4 text-center">
               <h3 className="font-extrabold text-lg text-ink-strong tracking-tight">SMP THHK — Ujian Sumatif</h3>
-              <p className="text-[10px] text-ink-faint font-bold uppercase tracking-label mt-1">Naskah Soal Utama • Petunjuk Pengerjaan pada LJK Kertas</p>
+              <p className="text-[10px] text-ink-faint font-bold uppercase tracking-label mt-1">Naskah Soal Utama</p>
             </div>
 
             <div className="space-y-4 text-sm leading-relaxed">
               <div className="p-4 bg-accent/5 border border-accent/25 rounded-lg">
                 <h4 className="font-bold text-accent-soft text-[11px] uppercase tracking-label mb-2">Stimulus Bacaan (Soal 1 – 5)</h4>
                 <p className="text-ink text-xs md:text-sm">
-                  Cermatilah teks berikut ini dengan teliti sebelum mengisi lembar jawab kertas Anda.
+                  Cermatilah teks berikut ini dengan teliti sebelum menjawab pertanyaan.
                   Kebudayaan lokal di wilayah Nusantara memiliki karakteristik unik yang merefleksikan nilai-nilai gotong royong dan toleransi antar sesama...
                 </p>
               </div>

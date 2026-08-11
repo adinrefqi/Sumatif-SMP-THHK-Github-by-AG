@@ -27,7 +27,6 @@ graph TD
 - **`lib/supabase.js`**: Client SDK Supabase terintegrasi dengan environment variables `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`.
 - **`components/admin/PdfUploader.jsx`**: Modul unggah file PDF naskah soal ke Supabase Storage + pengisian metadata ujian (Mapel, Kelas, Durasi).
 - **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time dengan animasi countdown **15-Menit Rotasi Token** dan tombol emergency reset sesi siswa.
-- **`components/admin/LjkPrinter.jsx`**: Modul render & cetak Lembar Jawab Kertas (LJK A4/F4) khas SMP THHK.
 - **`components/viewer/MobilePdfViewer.jsx`**: Penampil naskah soal PDF berbasis `pdfjs-dist` dengan gestur *pinch-to-zoom*, *bookmark* halaman bacaan, dan pengatur skala cepat (A-/A/A+).
 - **`components/viewer/StudentTokenScreen.jsx`**: Form konfirmasi data peserta & masukan Token Ujian 6-karakter.
 - **`components/viewer/ExamTimerHeader.jsx`**: Barikade atas berisi Jam Realtime, Indikator Baterai (via JS Bridge), Timer Hitung Mundur, dan Tombol "Bantuan Pengawas".
