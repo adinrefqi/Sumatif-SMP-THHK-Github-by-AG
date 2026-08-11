@@ -68,6 +68,7 @@ Sistem ini menerapkan **Metode Hibrida**:
 7. **Gate Berita Acara Proktor:** Kewajiban proktor mengisi berita acara sebelum membuka rilis token & monitoring.
 8. **Super Admin PDF Readability Inspector:** Fitur uji pratinjau tampilan naskah soal PDF di layar HP siswa untuk memastikan dokumen terbaca jelas sebelum rilis token.
 9. **Batch Multi-File PDF Upload & Multi-Active Exam Selection:** Fitur unggah banyak file PDF sekaligus dengan smart filename parser, manajemen bank soal master, dan aktivasi banyak naskah soal sekaligus (*Multi-Active Exams*) yang dicocokkan otomatis per tingkat kelas siswa.
+10. **Arsitektur Tepat 3 Ruang Ujian (Ruang 1, Ruang 2, Ruang 3):** 1 Akun Proktor terikat pada masing-masing dari tepat 3 ruang ujian sekolah untuk mengelola Berita Acara dan Presensi TTD siswa per ruangan.
 
 ---
 

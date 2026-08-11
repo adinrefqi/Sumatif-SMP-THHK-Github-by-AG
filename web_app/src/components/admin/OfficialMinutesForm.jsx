@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ClipboardList, CheckCircle2, UserCheck, School, BookOpen } from 'lucide-react';
 import { localExamStore } from '../../lib/supabase';
 
-export default function OfficialMinutesForm({ activeExam, onSubmitted }) {
-  const existing = localExamStore.getOfficialMinutes() || {};
+export default function OfficialMinutesForm({ activeExam, proctorRoom, onSubmitted }) {
+  const roomInitial = proctorRoom || 'Ruang 1';
+  const existing = localExamStore.getOfficialMinutes(roomInitial) || {};
 
   const [proctorName, setProctorName] = useState(existing.proctorName || '');
-  const [roomNumber, setRoomNumber] = useState(existing.roomNumber || 'Ruang 01 (Kelas 8A)');
+  const [roomNumber, setRoomNumber] = useState(proctorRoom || existing.roomNumber || 'Ruang 1');
   const [subject, setSubject] = useState(existing.subject || activeExam?.subject || 'Bahasa Indonesia');
   const [totalRegistered, setTotalRegistered] = useState(existing.totalRegistered || 30);
   const [totalPresent, setTotalPresent] = useState(existing.totalPresent || 30);
@@ -29,7 +30,7 @@ export default function OfficialMinutesForm({ activeExam, onSubmitted }) {
       submittedAt: new Date().toISOString()
     };
 
-    const saved = localExamStore.saveOfficialMinutes(payload);
+    const saved = localExamStore.saveOfficialMinutes(payload, roomNumber);
     if (onSubmitted) {
       onSubmitted(saved);
     }
@@ -70,15 +71,17 @@ export default function OfficialMinutesForm({ activeExam, onSubmitted }) {
           </div>
 
           <div>
-            <label className={labelCls}>Ruang Ujian / Rombel *</label>
-            <input
-              type="text"
-              required
+            <label className={labelCls}>Ruang Ujian *</label>
+            <select
               value={roomNumber}
+              disabled={Boolean(proctorRoom)}
               onChange={(e) => setRoomNumber(e.target.value)}
-              placeholder="Contoh: Ruang 01 (Kelas 8A)"
               className={inputCls}
-            />
+            >
+              <option value="Ruang 1">Ruang 1</option>
+              <option value="Ruang 2">Ruang 2</option>
+              <option value="Ruang 3">Ruang 3</option>
+            </select>
           </div>
 
           <div>

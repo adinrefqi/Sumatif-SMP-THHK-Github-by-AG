@@ -17,10 +17,6 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineModal, setShowOfflineModal] = useState(false);
 
-  const [adminAuthPin, setAdminAuthPin] = useState('');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [isAdminRole, setIsAdminRole] = useState(false); // true: Super Admin, false: Proctor
-
   const [isTokenAccessEnabled, setIsTokenAccessEnabled] = useState(localExamStore.isTokenAccessEnabled());
   const [activeExamIds, setActiveExamIds] = useState(localExamStore.getActiveExamIds());
   const [activeExams, setActiveExams] = useState(localExamStore.getActiveExams());
@@ -84,6 +80,12 @@ export default function App() {
     }
   };
 
+  const [adminAuthPin, setAdminAuthPin] = useState('');
+  const [proctorRoomInput, setProctorRoomInput] = useState('Ruang 1');
+  const [activeProctorRoom, setActiveProctorRoom] = useState('Ruang 1');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isAdminRole, setIsAdminRole] = useState(false); // true: Super Admin, false: Proctor
+
   const handleAdminPinSubmit = (e) => {
     e.preventDefault();
     const trimmedPin = adminAuthPin.trim();
@@ -95,6 +97,7 @@ export default function App() {
     } else if (trimmedPin === '12345') {
       setIsAdminAuthenticated(true);
       setIsAdminRole(false); // Proctor Role
+      setActiveProctorRoom(proctorRoomInput);
       setAdminAuthPin('');
     } else {
       alert('PIN Salah! Masukkan PIN Proktor (12345) atau PIN Super Admin (THHK2026)');
@@ -161,14 +164,35 @@ export default function App() {
                     onSubmit={handleAdminPinSubmit}
                     className="bg-console-panel border border-console-line rounded-xl p-5 space-y-3 shadow-panel"
                   >
-                    <input
-                      type="password"
-                      required
-                      value={adminAuthPin}
-                      onChange={(e) => setAdminAuthPin(e.target.value)}
-                      placeholder="PIN Ruang / PIN Super Admin"
-                      className="w-full px-4 py-2.5 bg-console-faint border border-console-line rounded-lg text-center font-mono font-bold text-lg text-ink-strong placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition"
-                    />
+                    <div>
+                      <label className="block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5">
+                        Pilih Ruang Ujian (Khusus Proktor)
+                      </label>
+                      <select
+                        value={proctorRoomInput}
+                        onChange={(e) => setProctorRoomInput(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-console-faint border border-console-line rounded-lg text-xs font-extrabold text-accent outline-none mb-2"
+                      >
+                        <option value="Ruang 1">Ruang 1</option>
+                        <option value="Ruang 2">Ruang 2</option>
+                        <option value="Ruang 3">Ruang 3</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5">
+                        PIN Otorisasi *
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={adminAuthPin}
+                        onChange={(e) => setAdminAuthPin(e.target.value)}
+                        placeholder="PIN Ruang / PIN Super Admin"
+                        className="w-full px-4 py-2.5 bg-console-faint border border-console-line rounded-lg text-center font-mono font-bold text-lg text-ink-strong placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition"
+                      />
+                    </div>
+
                     <button
                       type="submit"
                       className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-[11px] uppercase tracking-widest rounded-lg transition-colors"
@@ -191,12 +215,12 @@ export default function App() {
                     )}
                     <div>
                       <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider">
-                        {isAdminRole ? 'SUPER ADMIN PANEL (MANAJEMEN UTAMA)' : 'PANEL PROKTOR RUANG UJIAN'}
+                        {isAdminRole ? 'SUPER ADMIN PANEL (MANAJEMEN UTAMA)' : `PANEL PROKTOR - ${activeProctorRoom}`}
                       </h4>
                       <p className="text-[10px] text-ink-muted">
                         {isAdminRole
-                          ? 'Akses penuh unggah PDF/Google Drive & kontrol saklar token'
-                          : 'Akses wajib Berita Acara, Rilis Token, & Rekap TTD Siswa'}
+                          ? 'Akses penuh unggah PDF/Google Drive & kontrol saklar token 3 ruangan'
+                          : `Sesi pengawasan khusus ${activeProctorRoom} (Wajib Berita Acara)`}
                       </p>
                     </div>
                   </div>
@@ -229,6 +253,7 @@ export default function App() {
                   activeExams={activeExams}
                   isTokenAccessEnabled={isTokenAccessEnabled}
                   isAdminRole={isAdminRole}
+                  proctorRoom={activeProctorRoom}
                 />
 
               </div>

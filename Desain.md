@@ -25,10 +25,10 @@ graph TD
 
 ### A. Web Application (`web_app/`)
 - **`lib/supabase.js`**: Client SDK Supabase & local stores helper (termasuk penyimpanan presensi siswa, TTD digital, berita acara, dan status kuncian token).
-- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk unggah file PDF tunggal, link Google Drive, **Batch Upload Banyak PDF Sekaligus**, Master Switch Token, dan **Multi-Active Exam Bank Manager (Aktifkan Beberapa Soal Sekaligus)**.
-- **`components/admin/OfficialMinutesForm.jsx`**: Form Berita Acara Ujian yang wajib diisi Proktor saat login awal sebelum membuka rilis token.
-- **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time dengan tab **Rilis Token**, **Rekap Presensi & TTD Digital Siswa**, serta **View/Edit Berita Acara**.
-- **`components/viewer/StudentAttendanceModal.jsx`**: Modal Canvas Tanda Tangan Digital yang wajib diisi siswa setelah token 6-karakter divalidasi.
+- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk unggah file PDF, link Google Drive, Batch Upload, Master Switch Token, serta **Kartu Status Terpadu 3 Ruang Ujian (Ruang 1, 2, 3)**.
+- **`components/admin/OfficialMinutesForm.jsx`**: Form Berita Acara Ujian terikat pada **Ruang 1**, **Ruang 2**, atau **Ruang 3**.
+- **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time khusus ruangan terkait (`Ruang 1`, `Ruang 2`, `Ruang 3`).
+- **`components/viewer/StudentAttendanceModal.jsx`**: Modal Canvas Tanda Tangan Digital siswa yang mencatat presensi sesuai **Ruang Ujian** tempat siswa duduk.
 - **`components/viewer/MobilePdfViewer.jsx`**: Penampil naskah soal PDF berbasis `pdfjs-dist` dengan gestur *pinch-to-zoom*, *bookmark* halaman bacaan, dan pengatur skala cepat (A-/A/A+).
 - **`components/viewer/StudentTokenScreen.jsx`**: Form konfirmasi data peserta & masukan Token Ujian 6-karakter.
 - **`components/viewer/ExamTimerHeader.jsx`**: Barikade atas berisi Jam Realtime, Indikator Baterai (via JS Bridge), Timer Hitung Mundur, dan Tombol "Bantuan Pengawas".

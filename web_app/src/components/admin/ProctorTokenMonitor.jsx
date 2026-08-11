@@ -4,11 +4,13 @@ import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRo
 import { localExamStore } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
 
-export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, activeExams = [], isTokenAccessEnabled, isAdminRole }) {
+export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, activeExams = [], isTokenAccessEnabled, isAdminRole, proctorRoom = 'Ruang 1' }) {
   const [activeTab, setActiveTab] = useState('token'); // 'token' | 'attendance' | 'minutes'
-  const [officialMinutes, setOfficialMinutes] = useState(localExamStore.getOfficialMinutes());
-  const [showMinutesForm, setShowMinutesForm] = useState(!localExamStore.getOfficialMinutes() && !isAdminRole);
+  const [officialMinutes, setOfficialMinutes] = useState(localExamStore.getOfficialMinutes(proctorRoom));
+  const [showMinutesForm, setShowMinutesForm] = useState(!localExamStore.getOfficialMinutes(proctorRoom) && !isAdminRole);
   const [attendanceList, setAttendanceList] = useState(localExamStore.getAttendanceRecords());
+
+  const filteredAttendance = proctorRoom ? attendanceList.filter(r => r.room === proctorRoom) : attendanceList;
 
   const [timeInfo, setTimeInfo] = useState(getTimeRemainingInTokenCycle(activeTokenObj?.timestamp));
   const hasExpiredRef = useRef(false);
@@ -17,9 +19,10 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
   useEffect(() => {
     const interval = setInterval(() => {
       setAttendanceList(localExamStore.getAttendanceRecords());
+      setOfficialMinutes(localExamStore.getOfficialMinutes(proctorRoom));
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [proctorRoom]);
 
   // Interval timer for 15-min countdown
   useEffect(() => {
@@ -63,6 +66,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
     return (
       <OfficialMinutesForm
         activeExam={activeExam}
+        proctorRoom={proctorRoom}
         onSubmitted={handleMinutesSubmitted}
       />
     );
@@ -262,17 +266,17 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
                 Rekap Presensi & Tanda Tangan Digital Siswa
               </h3>
             </div>
-            <span className="text-xs font-bold text-accent">Total: {attendanceList.length} Siswa</span>
+            <span className="text-xs font-bold text-accent">Total: {filteredAttendance.length} Siswa ({proctorRoom})</span>
           </div>
 
-          {attendanceList.length === 0 ? (
+          {filteredAttendance.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-console-line rounded-xl bg-console-bg/50">
               <FileSignature className="w-8 h-8 text-ink-faint mx-auto mb-2 opacity-50" />
-              <p className="text-xs font-semibold text-ink-muted">Belum ada data tanda tangan digital siswa</p>
+              <p className="text-xs font-semibold text-ink-muted">Belum ada data tanda tangan digital siswa di {proctorRoom}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {attendanceList.map((item, idx) => (
+              {filteredAttendance.map((item, idx) => (
                 <div key={idx} className="bg-console-raised border border-console-line rounded-xl p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">

@@ -160,17 +160,21 @@ export const localExamStore = {
     }
   },
   // Proctor Official Minutes (Berita Acara)
-  getOfficialMinutes: () => {
+  getOfficialMinutes: (roomKey) => {
     try {
-      const data = localStorage.getItem(LOCAL_STORAGE_OFFICIAL_MINUTES_KEY);
+      const key = roomKey ? `thhk_official_minutes_${roomKey.replace(/\s+/g, '_').toLowerCase()}` : LOCAL_STORAGE_OFFICIAL_MINUTES_KEY;
+      const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : null;
     } catch {
       return null;
     }
   },
-  saveOfficialMinutes: (minutesData) => {
+  saveOfficialMinutes: (minutesData, roomKey) => {
     try {
       const payload = { ...minutesData, savedAt: new Date().toISOString() };
+      const key = roomKey ? `thhk_official_minutes_${roomKey.replace(/\s+/g, '_').toLowerCase()}` : LOCAL_STORAGE_OFFICIAL_MINUTES_KEY;
+      localStorage.setItem(key, JSON.stringify(payload));
+      // also set global as fallback
       localStorage.setItem(LOCAL_STORAGE_OFFICIAL_MINUTES_KEY, JSON.stringify(payload));
       return payload;
     } catch (e) {

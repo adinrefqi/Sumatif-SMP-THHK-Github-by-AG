@@ -9,6 +9,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
   const [studentName, setStudentName] = useState('');
   const [nisn, setNisn] = useState('');
   const [studentClass, setStudentClass] = useState('8A');
+  const [selectedRoom, setSelectedRoom] = useState('Ruang 1');
   const [selectedExamId, setSelectedExamId] = useState('');
   const [inputToken, setInputToken] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -44,6 +45,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
         name: studentName,
         nisn: nisn || '0080000000',
         class: studentClass,
+        room: selectedRoom,
         tokenEntered: inputToken.toUpperCase(),
         chosenExam: chosenExam
       });
@@ -53,11 +55,15 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
   };
 
   const handleAttendanceConfirmed = (attendanceData) => {
+    const fullAttendance = {
+      ...attendanceData,
+      room: selectedRoom
+    };
     // Save student attendance record locally
-    localExamStore.saveAttendanceRecord(attendanceData);
+    localExamStore.saveAttendanceRecord(fullAttendance);
     if (onTokenValidated) {
       onTokenValidated({
-        ...attendanceData,
+        ...fullAttendance,
         exam: chosenExam
       });
     }
@@ -108,6 +114,21 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
               placeholder="Masukkan nama lengkap Anda"
               className={inputBase}
             />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-accent uppercase tracking-label mb-1.5">
+              Ruang Ujian Terdaftar *
+            </label>
+            <select
+              value={selectedRoom}
+              onChange={(e) => setSelectedRoom(e.target.value)}
+              className={inputBase}
+            >
+              <option value="Ruang 1">Ruang 1</option>
+              <option value="Ruang 2">Ruang 2</option>
+              <option value="Ruang 3">Ruang 3</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

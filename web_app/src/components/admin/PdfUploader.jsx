@@ -381,6 +381,60 @@ export default function PdfUploader({
         </button>
       </div>
 
+      {/* Super Admin Monitoring 3 Ruang Ujian Card */}
+      <div className="bg-console-panel border border-console-line rounded-xl p-5 shadow-panel">
+        <div className="flex items-center justify-between border-b border-console-line pb-3 mb-4">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-accent" />
+            <h3 className="font-extrabold text-sm text-ink-strong tracking-tight">
+              Status Terpadu 3 Ruang Ujian Sumatif
+            </h3>
+          </div>
+          <span className="text-[10px] font-mono font-bold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded">
+            Tepat 3 Ruang Ujian (Ruang 1, 2, 3)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {['Ruang 1', 'Ruang 2', 'Ruang 3'].map((room) => {
+            const minutes = localExamStore.getOfficialMinutes(room);
+            const attendance = localExamStore.getAttendanceRecords().filter(r => r.room === room);
+            return (
+              <div key={room} className="bg-console-raised border border-console-line rounded-xl p-3.5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-extrabold text-xs text-ink-strong uppercase tracking-wider font-mono">
+                      {room}
+                    </span>
+                    {minutes ? (
+                      <span className="px-2 py-0.5 bg-ok/15 text-ok border border-ok/30 text-[9px] font-bold uppercase rounded">
+                        Berita Acara OK
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-bad/15 text-bad border border-bad/30 text-[9px] font-bold uppercase rounded">
+                        Belum Berita Acara
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-ink-muted">
+                    Proktor: <strong className="text-ink">{minutes?.proctorName || 'Belum Mengisi'}</strong>
+                  </p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">
+                    Mata Pelajaran: <span className="text-accent font-semibold">{minutes?.subject || 'Belum Diisi'}</span>
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-console-line flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-ink-faint">Peserta Hadir:</span>
+                  <strong className="text-ok font-extrabold">{attendance.length} Siswa</strong>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Main Upload Form Card */}
       <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-console-line pb-3 mb-5 gap-3">
