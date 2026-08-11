@@ -19,6 +19,11 @@
 ## Log Aktivitas Terbaru
 
 ### [2026-08-11]
+- **Redesign UI/UX Web App (`web_app`):**
+  - Mengubah total bahasa visual menjadi *Operational Console* (dark utility): latar gelap `#0B0F14`, panel `#11171F`, aksen kuning ANBK `#F0B90B`, font mono JetBrains Mono untuk token/timer.
+  - Mendesain ulang seluruh komponen: Navbar, StudentTokenScreen, ExamTimerHeader, MobilePdfViewer, OfflineFallbackModal, App shell (admin auth), ProctorTokenMonitor, PdfUploader, LjkPrinter.
+  - Lembar cetak LJK tetap putih agar siap cetak di kertas A4/F4.
+  - Build produksi terverifikasi sukses (`vite build`).
 - **Implementasi Modul Flutter Exambrowser (`flutter_app/`):**
   - Membuat `pubspec.yaml` dengan dependensi `flutter_inappwebview`, `flutter_windowmanager`, `kiosk_mode`, `audioplayers`, dan `battery_plus`.
   - Mengimplementasikan `main.dart` dengan `FLAG_SECURE` (Anti-Screenshot/Recording), Fullscreen Immersive Sticky, InAppWebView Vercel, dan PopScope interceptor.

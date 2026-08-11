@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { KeyRound, RefreshCw, Clock, Users, ShieldAlert, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
 import { localExamStore } from '../../lib/supabase';
 
@@ -43,72 +43,75 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-6 mb-6">
+    <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left 1 Col: ANBK Token Box */}
-        <div className="lg:col-span-1 bg-gradient-to-br from-anbk-blue to-blue-900 text-white rounded-xl p-5 shadow-md flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
-          
+
+        {/* Left: Token Box */}
+        <div className="lg:col-span-1 bg-console-raised border border-console-line rounded-xl p-5 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-accent/70" />
+
           <div>
-            <div className="flex items-center justify-between text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2">
-              <span className="flex items-center space-x-1.5">
-                <KeyRound className="w-4 h-4 text-yellow-300" />
-                <span>TOKEN RILIS ANBK</span>
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-label text-ink-muted">
+                <KeyRound className="w-3.5 h-3.5 text-accent" />
+                <span>Token Rilis ANBK</span>
               </span>
-              <span className="px-2 py-0.5 bg-yellow-400/20 text-yellow-300 rounded font-mono">
-                ROTASI 15 MENIT
+              <span className="px-2 py-0.5 bg-accent/10 border border-accent/25 text-accent rounded-md text-[9px] font-bold uppercase tracking-wider">
+                Rotasi 15 Menit
               </span>
             </div>
 
             {/* Token Big Display */}
-            <div className="text-center py-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10 my-2">
-              <span className="font-mono text-4xl md:text-5xl font-extrabold tracking-widest text-yellow-300 drop-shadow-sm select-all">
+            <div className="text-center py-5 bg-console-bg rounded-lg border border-console-line">
+              <span className="font-mono text-4xl md:text-5xl font-extrabold tracking-[0.2em] text-accent-soft select-all tabular-nums">
                 {activeTokenObj?.token || 'THHK26'}
               </span>
-              <p className="text-xs text-blue-100 mt-1">Beritahukan token ini kepada peserta di ruang ujian</p>
+              <p className="text-[10px] text-ink-faint mt-2 font-semibold uppercase tracking-wider">
+                Umumkan token ini ke peserta ruang ujian
+              </p>
             </div>
           </div>
 
-          {/* Countdown Progress Bar */}
-          <div className="mt-4 pt-3 border-t border-white/10">
-            <div className="flex items-center justify-between text-xs text-blue-100 font-medium mb-1.5">
-              <span className="flex items-center space-x-1">
+          {/* Countdown */}
+          <div className="mt-4 pt-4 border-t border-console-line">
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-2">
+              <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
-                <span>Rotasi Berikutnya:</span>
+                <span>Rotasi Berikutnya</span>
               </span>
-              <span className="font-mono font-bold text-yellow-300">
+              <span className="font-mono font-extrabold text-accent-soft tabular-nums">
                 {String(timeInfo.minutes).padStart(2, '0')}:{String(timeInfo.seconds).padStart(2, '0')}
               </span>
             </div>
 
-            <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-console-bg h-1.5 rounded-full overflow-hidden border border-console-line">
               <div
-                className="bg-yellow-400 h-full transition-all duration-1000 ease-linear rounded-full"
+                className="bg-accent h-full transition-all duration-1000 ease-linear rounded-full"
                 style={{ width: `${timeInfo.percentage}%` }}
               />
             </div>
 
             <button
               onClick={handleManualRefresh}
-              className="w-full mt-3.5 py-2 bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-gray-900 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-sm"
+              className="w-full mt-4 py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Rilis Token Baru Sekarang</span>
+              <span>Rilis Token Baru</span>
             </button>
           </div>
         </div>
 
-        {/* Right 2 Cols: Real-time Student Session Monitor */}
+        {/* Right: Student Session Monitor */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-anbk-blue" />
-              <h3 className="font-bold text-gray-800 text-base">
+          <div className="flex items-center justify-between border-b border-console-line pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-accent" />
+              <h3 className="font-bold text-ink-strong text-sm tracking-tight">
                 Monitoring Sesi Peserta Real-Time
               </h3>
             </div>
-            <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full">
+            <span className="text-[10px] bg-ok/10 border border-ok/25 text-ok font-bold px-2.5 py-1 rounded-md uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-ok live-dot" />
               {mockStudents.filter(s => s.status === 'ACTIVE').length} Aktif
             </span>
           </div>
@@ -117,7 +120,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-gray-50 text-gray-600 font-semibold uppercase border-b border-gray-200">
+                <tr className="text-ink-faint text-[9px] font-bold uppercase tracking-label border-b border-console-line">
                   <th className="p-2.5">Siswa</th>
                   <th className="p-2.5">Kelas</th>
                   <th className="p-2.5">Jam Masuk</th>
@@ -126,47 +129,47 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate }) {
                   <th className="p-2.5 text-right">Aksi Emergency</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-console-faint">
                 {mockStudents.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50/80 transition">
-                    <td className="p-2.5 font-medium text-gray-900">
+                  <tr key={s.id} className="hover:bg-console-faint/60 transition-colors">
+                    <td className="p-2.5 font-semibold text-ink-strong">
                       <div>{s.name}</div>
-                      <div className="text-[10px] text-gray-400">NISN: {s.nisn}</div>
+                      <div className="text-[10px] text-ink-faint font-mono font-medium">NISN {s.nisn}</div>
                     </td>
-                    <td className="p-2.5 text-gray-600">{s.class}</td>
-                    <td className="p-2.5 font-mono text-gray-600">{s.timeEntered}</td>
+                    <td className="p-2.5 text-ink-muted font-medium">{s.class}</td>
+                    <td className="p-2.5 font-mono text-ink-muted tabular-nums">{s.timeEntered}</td>
                     <td className="p-2.5">
                       {s.status === 'ACTIVE' && (
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold flex items-center space-x-1 w-max">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span className="px-2 py-0.5 bg-ok/10 border border-ok/25 text-ok rounded-md text-[10px] font-bold flex items-center gap-1 w-max">
+                          <CheckCircle2 className="w-3 h-3" />
                           <span>Mengerjakan</span>
                         </span>
                       )}
                       {s.status === 'HELP_NEEDED' && (
-                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded font-semibold flex items-center space-x-1 w-max animate-pulse">
-                          <AlertTriangle className="w-3 h-3 text-yellow-600" />
+                        <span className="px-2 py-0.5 bg-accent/10 border border-accent/30 text-accent rounded-md text-[10px] font-bold flex items-center gap-1 w-max animate-pulse">
+                          <AlertTriangle className="w-3 h-3" />
                           <span>Minta Bantuan</span>
                         </span>
                       )}
                       {s.status === 'RESET' && (
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded font-semibold w-max">
+                        <span className="px-2 py-0.5 bg-console-raised border border-console-line text-ink-muted rounded-md text-[10px] font-bold w-max">
                           Di-Reset
                         </span>
                       )}
                     </td>
                     <td className="p-2.5">
                       {s.violations > 0 ? (
-                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 font-bold rounded">
+                        <span className="px-2 py-0.5 bg-bad/10 border border-bad/25 text-bad font-bold rounded-md text-[10px]">
                           {s.violations}x Pindah Apps
                         </span>
                       ) : (
-                        <span className="text-gray-400">0</span>
+                        <span className="text-ink-faint font-mono">0</span>
                       )}
                     </td>
                     <td className="p-2.5 text-right">
                       <button
                         onClick={() => handleResetStudent(s.id)}
-                        className="px-2 py-1 bg-gray-100 hover:bg-rose-50 hover:text-rose-700 active:bg-rose-100 text-gray-700 rounded font-semibold transition flex items-center space-x-1 ml-auto text-[11px]"
+                        className="px-2 py-1 bg-console-raised hover:bg-bad/10 hover:text-bad hover:border-bad/30 border border-console-line text-ink-muted rounded-md text-[10px] font-bold transition-colors inline-flex items-center gap-1"
                         title="Reset sesi jika HP siswa mati/restart"
                       >
                         <RotateCcw className="w-3 h-3" />

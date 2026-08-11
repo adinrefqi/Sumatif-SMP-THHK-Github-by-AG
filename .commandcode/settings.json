@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(npm:*)",
+      "Shell(dir:*)",
+      "Shell(type:*)",
+      "Shell(findstr:*)",
+      "Shell(cmd:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

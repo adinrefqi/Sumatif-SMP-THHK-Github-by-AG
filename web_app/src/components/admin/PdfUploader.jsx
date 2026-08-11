@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured, localExamStore } from '../../lib/supabase';
 
 export default function PdfUploader({ onExamCreated }) {
@@ -84,10 +84,10 @@ export default function PdfUploader({ onExamCreated }) {
         localExamStore.saveExams([newExam, ...existingExams]);
       }
 
-      setMessage({ type: 'success', text: 'Naskah soal PDF berhasil diunggah & diterbitkan!' });
+      setMessage({ type: 'success', text: 'Naskah soal PDF berhasil diunggah & diterbitkan.' });
       setPdfFile(null);
       setTitle('');
-      
+
       if (onExamCreated) {
         onExamCreated(newExam);
       }
@@ -99,23 +99,29 @@ export default function PdfUploader({ onExamCreated }) {
     }
   };
 
+  const labelCls = 'block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5';
+  const inputCls =
+    'w-full px-3.5 py-2.5 bg-console-faint border border-console-line rounded-lg text-sm text-ink-strong placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition';
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-6 mb-6">
-      <div className="flex items-center space-x-2 border-b border-gray-100 pb-3 mb-4">
-        <UploadCloud className="w-5 h-5 text-anbk-blue" />
-        <h2 className="font-bold text-gray-800 text-base md:text-lg">
+    <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
+      <div className="flex items-center gap-2 border-b border-console-line pb-3 mb-5">
+        <UploadCloud className="w-4 h-4 text-accent" />
+        <h2 className="font-bold text-ink-strong text-sm tracking-tight">
           Upload Naskah Soal PDF (Ujian Sumatif)
         </h2>
       </div>
 
       {message && (
-        <div className={`p-3.5 rounded-lg mb-4 text-sm font-medium flex items-center space-x-2 ${
-          message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+        <div className={`p-3 rounded-lg mb-4 text-xs font-semibold flex items-center gap-2 border ${
+          message.type === 'success'
+            ? 'bg-ok/10 text-ok border-ok/25'
+            : 'bg-bad/10 text-bad border-bad/25'
         }`}>
           {message.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
@@ -124,27 +130,23 @@ export default function PdfUploader({ onExamCreated }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Judul Ujian Sumatif *
-            </label>
+            <label className={labelCls}>Judul Ujian Sumatif *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Contoh: Sumatif Akhir Semester Bahasa Indonesia"
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-anbk-blue focus:border-anbk-blue outline-none transition"
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Mata Pelajaran
-            </label>
+            <label className={labelCls}>Mata Pelajaran</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-anbk-blue focus:border-anbk-blue outline-none transition"
+              className={inputCls}
             >
               <option value="Bahasa Indonesia">Bahasa Indonesia</option>
               <option value="Matematika">Matematika</option>
@@ -159,13 +161,11 @@ export default function PdfUploader({ onExamCreated }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Tingkat Kelas
-            </label>
+            <label className={labelCls}>Tingkat Kelas</label>
             <select
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-anbk-blue focus:border-anbk-blue outline-none transition"
+              className={inputCls}
             >
               <option value="Kelas 7">Kelas VII (7)</option>
               <option value="Kelas 8">Kelas VIII (8)</option>
@@ -174,9 +174,7 @@ export default function PdfUploader({ onExamCreated }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Durasi Ujian (Menit)
-            </label>
+            <label className={labelCls}>Durasi Ujian (Menit)</label>
             <input
               type="number"
               min="15"
@@ -184,17 +182,15 @@ export default function PdfUploader({ onExamCreated }) {
               required
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-anbk-blue focus:border-anbk-blue outline-none transition"
+              className={inputCls}
             />
           </div>
         </div>
 
         {/* PDF File Dropzone */}
         <div>
-          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-            Pilih File PDF Soal Ujian *
-          </label>
-          <div className="border-2 border-dashed border-gray-300 hover:border-anbk-blue rounded-xl p-4 text-center cursor-pointer transition bg-gray-50/50 relative">
+          <label className={labelCls}>Pilih File PDF Soal Ujian *</label>
+          <div className="border border-dashed border-console-line hover:border-accent/50 rounded-lg p-4 text-center cursor-pointer transition-colors bg-console-faint/60 relative">
             <input
               type="file"
               accept=".pdf"
@@ -202,17 +198,17 @@ export default function PdfUploader({ onExamCreated }) {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             {pdfFile ? (
-              <div className="flex items-center justify-center space-x-2 text-anbk-blue font-semibold text-sm py-2">
-                <FileText className="w-5 h-5 text-anbk-blue" />
+              <div className="flex items-center justify-center gap-2 text-accent-soft font-semibold text-sm py-2">
+                <FileText className="w-5 h-5" />
                 <span>{pdfFile.name} ({(pdfFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
               </div>
             ) : (
               <div className="py-3">
-                <UploadCloud className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                <p className="text-sm font-medium text-gray-700">
+                <UploadCloud className="w-8 h-8 text-ink-faint mx-auto mb-1.5" />
+                <p className="text-sm font-medium text-ink">
                   Klik atau seret file PDF naskah soal ke sini
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">Format dokumen .pdf (Maksimal 25MB)</p>
+                <p className="text-[11px] text-ink-faint mt-0.5">Format dokumen .pdf (Maksimal 25MB)</p>
               </div>
             )}
           </div>
@@ -221,15 +217,12 @@ export default function PdfUploader({ onExamCreated }) {
         <button
           type="submit"
           disabled={isUploading}
-          className="w-full py-2.5 bg-anbk-blue hover:bg-anbk-darkBlue active:bg-blue-900 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 disabled:opacity-50"
+          className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
         >
           {isUploading ? (
             <span>Mengunggah Naskah Soal...</span>
           ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              <span>Terbitkan Soal & Aktifkan Sesi Ujian</span>
-            </>
+            <span>Terbitkan Soal & Aktifkan Sesi Ujian</span>
           )}
         </button>
       </form>

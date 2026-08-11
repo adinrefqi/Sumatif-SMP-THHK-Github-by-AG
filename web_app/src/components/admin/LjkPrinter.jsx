@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, FileSpreadsheet, CheckSquare } from 'lucide-react';
+import { Printer } from 'lucide-react';
 
 export default function LjkPrinter() {
   const [paperSize, setPaperSize] = useState('A4');
@@ -11,53 +11,57 @@ export default function LjkPrinter() {
     window.print();
   };
 
+  const labelCls = 'block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5';
+  const inputCls =
+    'w-full px-3 py-2 bg-console-faint border border-console-line rounded-lg text-xs text-ink-strong focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition';
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-6 mb-6">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-        <div className="flex items-center space-x-2">
-          <Printer className="w-5 h-5 text-anbk-blue" />
-          <h2 className="font-bold text-gray-800 text-base md:text-lg">
-            Generator & Cetak Lembar Jawab Kertas (LJK Fisik)
+    <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
+      <div className="flex items-center justify-between gap-3 border-b border-console-line pb-3 mb-5">
+        <div className="flex items-center gap-2 min-w-0">
+          <Printer className="w-4 h-4 text-accent shrink-0" />
+          <h2 className="font-bold text-ink-strong text-sm tracking-tight truncate">
+            Generator & Cetak Lembar Jawab Kertas (LJK)
           </h2>
         </div>
 
         <button
           onClick={handlePrint}
-          className="px-4 py-2 bg-anbk-blue hover:bg-anbk-darkBlue active:bg-blue-900 text-white font-bold text-xs md:text-sm rounded-lg shadow transition flex items-center space-x-2"
+          className="shrink-0 px-4 py-2 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-[11px] uppercase tracking-widest rounded-lg transition-colors flex items-center gap-2"
         >
           <Printer className="w-4 h-4" />
-          <span>Cetak LJK Sekarang</span>
+          <span className="hidden sm:inline">Cetak LJK</span>
         </button>
       </div>
 
       {/* Control settings */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs font-medium">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-console-faint/60 p-4 rounded-lg border border-console-line">
         <div>
-          <label className="block text-gray-700 font-semibold mb-1">Mata Pelajaran</label>
+          <label className={labelCls}>Mata Pelajaran</label>
           <input
             type="text"
             value={subjectName}
             onChange={(e) => setSubjectName(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-anbk-blue"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-gray-700 font-semibold mb-1">Tingkat Kelas</label>
+          <label className={labelCls}>Tingkat Kelas</label>
           <input
             type="text"
             value={gradeText}
             onChange={(e) => setGradeText(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-anbk-blue"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-gray-700 font-semibold mb-1">Jumlah Soal LJK</label>
+          <label className={labelCls}>Jumlah Soal LJK</label>
           <select
             value={totalQuestions}
             onChange={(e) => setTotalQuestions(Number(e.target.value))}
-            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-anbk-blue"
+            className={inputCls}
           >
             <option value="20">20 Soal</option>
             <option value="30">30 Soal</option>
@@ -67,9 +71,9 @@ export default function LjkPrinter() {
         </div>
       </div>
 
-      {/* Printable Sheet View Container */}
-      <div className="border border-gray-300 rounded-lg p-6 bg-white shadow-inner printable-ljk font-sans">
-        
+      {/* Printable Sheet View Container (tetap putih — dicetak di kertas) */}
+      <div className="rounded-lg p-6 bg-white text-black shadow-panel printable-ljk font-sans">
+
         {/* Header LJK */}
         <div className="border-b-2 border-black pb-3 mb-4 text-center">
           <h2 className="font-extrabold text-lg uppercase tracking-wide text-black">
@@ -120,7 +124,7 @@ export default function LjkPrinter() {
         {/* Section B: Essay Box */}
         <div>
           <h4 className="font-bold text-xs text-black uppercase mb-1">
-            BAGIAN B: URAN / ESSAY
+            BAGIAN B: URAIAN / ESSAY
           </h4>
           <div className="border border-black min-h-[140px] p-2 rounded text-xs text-gray-500 italic">
             (Tuliskan jawaban uraian Anda di kolom ini dengan jelas)

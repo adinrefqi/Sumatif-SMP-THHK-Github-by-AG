@@ -8,7 +8,7 @@ import MobilePdfViewer from './components/viewer/MobilePdfViewer';
 import ExamTimerHeader from './components/viewer/ExamTimerHeader';
 import OfflineFallbackModal from './components/viewer/OfflineFallbackModal';
 import { localExamStore } from './lib/supabase';
-import { ShieldAlert, KeyRound, CheckCircle2, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 export default function App() {
   const [activeMode, setActiveMode] = useState('student'); // 'student' | 'admin'
@@ -76,7 +76,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-console-bg text-ink flex flex-col">
       <Navbar
         activeMode={activeMode}
         setActiveMode={setActiveMode}
@@ -111,36 +111,43 @@ export default function App() {
         {activeMode === 'admin' && (
           <div className="max-w-7xl mx-auto p-4 md:p-6">
             {!isAdminAuthenticated ? (
-              <div className="max-w-md mx-auto my-12 bg-white p-6 rounded-2xl shadow-lg border border-gray-200 text-center">
-                <div className="w-12 h-12 bg-anbk-blue/10 text-anbk-blue rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Lock className="w-6 h-6 text-anbk-blue" />
-                </div>
-                <h3 className="font-extrabold text-lg text-gray-900 mb-1">
-                  Otorisasi Panel Proktor Ujian
-                </h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Masukkan PIN Keamanan Admin untuk membuka ruang manajemen token & unggah soal.
-                </p>
+              <div className="min-h-[70vh] flex items-center justify-center">
+                <div className="w-full max-w-sm animate-fadeUp">
+                  <div className="mb-6 text-center">
+                    <div className="w-12 h-12 bg-accent/10 border border-accent/25 text-accent rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-extrabold text-xl text-ink-strong tracking-tight">
+                      Otorisasi Panel Proktor
+                    </h3>
+                    <p className="text-xs text-ink-muted mt-1.5">
+                      Masukkan PIN keamanan untuk membuka manajemen token dan unggah soal.
+                    </p>
+                  </div>
 
-                <form onSubmit={handleAdminPinSubmit} className="space-y-3">
-                  <input
-                    type="password"
-                    required
-                    value={adminAuthPin}
-                    onChange={(e) => setAdminAuthPin(e.target.value)}
-                    placeholder="Masukkan PIN Admin (Default: 12345)"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-center font-mono font-bold text-lg focus:ring-2 focus:ring-anbk-blue outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 bg-anbk-blue hover:bg-anbk-darkBlue text-white font-bold text-sm rounded-xl shadow transition"
+                  <form
+                    onSubmit={handleAdminPinSubmit}
+                    className="bg-console-panel border border-console-line rounded-xl p-5 space-y-3 shadow-panel"
                   >
-                    Buka Panel Proktor
-                  </button>
-                </form>
+                    <input
+                      type="password"
+                      required
+                      value={adminAuthPin}
+                      onChange={(e) => setAdminAuthPin(e.target.value)}
+                      placeholder="PIN Admin (Default: 12345)"
+                      className="w-full px-4 py-2.5 bg-console-faint border border-console-line rounded-lg text-center font-mono font-bold text-lg text-ink-strong placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition"
+                    />
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-[11px] uppercase tracking-widest rounded-lg transition-colors"
+                    >
+                      Buka Panel Proktor
+                    </button>
+                  </form>
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6 animate-fadeUp">
                 <ProctorTokenMonitor
                   activeTokenObj={activeTokenObj}
                   onTokenUpdate={(updatedObj) => setActiveTokenObj(updatedObj)}
