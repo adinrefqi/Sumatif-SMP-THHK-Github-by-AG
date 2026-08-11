@@ -10,6 +10,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export default function MobilePdfViewer({ pdfUrl }) {
+  const isGoogleDriveUrl = Boolean(pdfUrl && (pdfUrl.includes('drive.google.com') || pdfUrl.includes('docs.google.com')));
   const [pdfDoc, setPdfDoc] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(1);
@@ -237,15 +238,23 @@ export default function MobilePdfViewer({ pdfUrl }) {
 
       {/* Main Canvas Scrollable Container */}
       <div className="flex-1 overflow-auto p-3 flex justify-center items-start relative">
-        {isLoading && (
+        {isLoading && !isGoogleDriveUrl && (
           <div className="absolute inset-0 bg-console-bg/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
             <div className="w-10 h-10 border-[3px] border-accent border-t-transparent rounded-full animate-spin mb-3"></div>
             <p className="text-xs font-bold text-ink-muted uppercase tracking-label">Memuat Naskah Soal</p>
           </div>
         )}
 
-        {/* Fallback Mock Document if rendering canvas unavailable */}
-        {errorMsg ? (
+        {isGoogleDriveUrl ? (
+          <div className="w-full h-full min-h-[500px] bg-white rounded-lg overflow-hidden shadow-panel">
+            <iframe
+              src={pdfUrl}
+              title="Google Drive PDF Viewer"
+              className="w-full h-full min-h-[500px] border-0"
+              allow="autoplay"
+            />
+          </div>
+        ) : errorMsg ? (
           <div className="max-w-2xl w-full bg-console-panel border border-console-line rounded-xl shadow-panel p-6 md:p-8 my-4 animate-fadeUp">
             <div className="border-b border-console-line pb-4 mb-4 text-center">
               <h3 className="font-extrabold text-lg text-ink-strong tracking-tight">SMP THHK — Ujian Sumatif</h3>

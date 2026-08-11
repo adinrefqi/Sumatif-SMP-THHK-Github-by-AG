@@ -66,6 +66,7 @@ Sistem ini menerapkan **Metode Hibrida**:
 5. **Daftar Hadir & Tanda Tangan Digital Siswa:** Modal canvas TTD digital yang wajib diisi siswa setelah token terverifikasi.
 6. **Integrasi Google Drive PDF & Master Switch Token:** Pilihan input link GDrive untuk soal PDF dan penguncian rilis token oleh Super Admin.
 7. **Gate Berita Acara Proktor:** Kewajiban proktor mengisi berita acara sebelum membuka rilis token & monitoring.
+8. **Super Admin PDF Readability Inspector:** Fitur uji pratinjau tampilan naskah soal PDF di layar HP siswa untuk memastikan dokumen terbaca jelas sebelum rilis token.
 
 ---
 

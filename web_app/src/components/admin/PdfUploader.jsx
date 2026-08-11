@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Link as LinkIcon, Lock, Unlock, ShieldAlert } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertCircle, Link as LinkIcon, Lock, Unlock, ShieldAlert, Eye, X, Smartphone, CheckCheck } from 'lucide-react';
 import { supabase, isSupabaseConfigured, localExamStore } from '../../lib/supabase';
+import MobilePdfViewer from '../viewer/MobilePdfViewer';
 
 export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onToggleTokenAccess }) {
   const [sourceType, setSourceType] = useState('file'); // 'file' | 'gdrive'
@@ -12,6 +13,8 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
   const [gdriveUrl, setGdriveUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [showPdfCheckModal, setShowPdfCheckModal] = useState(false);
+  const [testPdfUrl, setTestPdfUrl] = useState(null);
 
   const convertGDriveUrl = (urlStr) => {
     if (!urlStr) return '';
@@ -126,6 +129,21 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
   const inputCls =
     'w-full px-3.5 py-2.5 bg-console-faint border border-console-line rounded-lg text-sm text-ink-strong placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none transition';
 
+  const handleOpenPdfCheck = () => {
+    let urlToTest = null;
+    if (sourceType === 'gdrive' && gdriveUrl.trim()) {
+      urlToTest = convertGDriveUrl(gdriveUrl.trim());
+    } else if (pdfFile) {
+      urlToTest = URL.createObjectURL(pdfFile);
+    } else {
+      const active = localExamStore.getExams()[0];
+      urlToTest = active?.pdf_url || null;
+    }
+
+    setTestPdfUrl(urlToTest);
+    setShowPdfCheckModal(true);
+  };
+
   return (
     <div className="space-y-6">
       
@@ -189,28 +207,41 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
             </h2>
           </div>
 
-          {/* Mode Switcher: File vs GDrive */}
-          <div className="flex bg-console-bg border border-console-line p-1 rounded-lg text-xs font-bold">
+          {/* Action Buttons: Mode Switcher & Cek PDF */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setSourceType('file')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
-                sourceType === 'file' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
-              }`}
+              onClick={handleOpenPdfCheck}
+              className="px-3 py-1.5 bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+              title="Uji keterbacaan tampilan naskah soal di layar HP siswa"
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Upload PDF</span>
+              <Eye className="w-4 h-4" />
+              <span>Cek Tampilan PDF Siswa</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setSourceType('gdrive')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
-                sourceType === 'gdrive' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              <LinkIcon className="w-3.5 h-3.5" />
-              <span>Link Google Drive</span>
-            </button>
+
+            {/* Mode Switcher: File vs GDrive */}
+            <div className="flex bg-console-bg border border-console-line p-1 rounded-lg text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setSourceType('file')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+                  sourceType === 'file' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Upload PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceType('gdrive')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+                  sourceType === 'gdrive' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Link Google Drive</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -337,19 +368,90 @@ export default function PdfUploader({ onExamCreated, isTokenAccessEnabled, onTog
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isUploading}
-            className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {isUploading ? (
-              <span>Mengunggah Naskah Soal...</span>
-            ) : (
-              <span>Terbitkan Soal & Aktifkan Sesi Ujian</span>
-            )}
-          </button>
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="flex-1 py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {isUploading ? (
+                <span>Mengunggah Naskah Soal...</span>
+              ) : (
+                <span>Terbitkan Soal & Aktifkan Sesi Ujian</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenPdfCheck}
+              className="px-4 py-2.5 bg-console-raised hover:bg-console-line border border-console-line text-ink font-bold rounded-lg text-[11px] uppercase tracking-wider transition-colors flex items-center gap-1.5"
+            >
+              <Eye className="w-4 h-4 text-accent" />
+              <span>Uji Tampilan</span>
+            </button>
+          </div>
         </form>
       </div>
+
+      {/* SUPER ADMIN PDF PREVIEW & READABILITY CHECK MODAL */}
+      {showPdfCheckModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-fadeUp">
+          <div className="bg-console-panel border border-console-line rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            
+            {/* Modal Top Header */}
+            <div className="bg-console-raised px-4 py-3 border-b border-console-line flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 text-accent flex items-center justify-center">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-ink-strong tracking-tight flex items-center gap-2">
+                    <span>Uji Keterbacaan Naskah Soal (Super Admin Inspector)</span>
+                    <span className="px-2 py-0.5 bg-ok/10 text-ok border border-ok/25 text-[9px] uppercase font-bold rounded">
+                      Mobile Preview Mode
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-ink-muted">
+                    Format: {sourceType === 'gdrive' ? 'Google Drive Embed' : 'File PDF Direct'} • Memastikan naskah terbaca jelas oleh siswa.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowPdfCheckModal(false)}
+                className="w-8 h-8 rounded-lg bg-console-bg hover:bg-bad/20 border border-console-line hover:border-bad/40 text-ink-muted hover:text-bad flex items-center justify-center transition-colors"
+                title="Tutup Pratinjau"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Main Preview Container */}
+            <div className="flex-1 bg-console-bg p-3 md:p-4 overflow-hidden flex flex-col justify-center">
+              <div className="w-full h-full max-w-3xl mx-auto border border-console-line rounded-xl overflow-hidden shadow-2xl flex flex-col">
+                <MobilePdfViewer pdfUrl={testPdfUrl} />
+              </div>
+            </div>
+
+            {/* Modal Bottom Bar */}
+            <div className="bg-console-raised px-4 py-3 border-t border-console-line flex items-center justify-between text-xs">
+              <span className="text-ink-muted flex items-center gap-1.5">
+                <CheckCheck className="w-4 h-4 text-ok" />
+                <span>Jika dokumen terlihat jelas, Anda dapat aman merilis akses token kepada Proktor.</span>
+              </span>
+
+              <button
+                onClick={() => setShowPdfCheckModal(false)}
+                className="px-4 py-1.5 bg-accent hover:bg-accent-soft text-console-bg font-extrabold uppercase text-[11px] tracking-wider rounded-lg transition-colors"
+              >
+                Selesai Memeriksa
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

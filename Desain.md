@@ -25,7 +25,7 @@ graph TD
 
 ### A. Web Application (`web_app/`)
 - **`lib/supabase.js`**: Client SDK Supabase & local stores helper (termasuk penyimpanan presensi siswa, TTD digital, berita acara, dan status kuncian token).
-- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk unggah file PDF lokal / input Link Google Drive + Master Switch "Buka/Kunci Akses Token Proktor".
+- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk unggah file PDF lokal / input Link Google Drive, Master Switch "Buka/Kunci Akses Token Proktor", dan **Super Admin PDF Inspector (Cek Tampilan & Keterbacaan Soal Siswa)**.
 - **`components/admin/OfficialMinutesForm.jsx`**: Form Berita Acara Ujian yang wajib diisi Proktor saat login awal sebelum membuka rilis token.
 - **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time dengan tab **Rilis Token**, **Rekap Presensi & TTD Digital Siswa**, serta **View/Edit Berita Acara**.
 - **`components/viewer/StudentAttendanceModal.jsx`**: Modal Canvas Tanda Tangan Digital yang wajib diisi siswa setelah token 6-karakter divalidasi.
