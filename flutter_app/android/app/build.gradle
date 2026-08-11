@@ -38,11 +38,30 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile'] != null) {
-                keyAlias keystoreProperties['keyAlias'].toString().trim()
-                keyPassword keystoreProperties['keyPassword'].toString().trim()
-                storeFile rootProject.file("app/${keystoreProperties['storeFile'].toString().trim()}")
-                storePassword keystoreProperties['storePassword'].toString().trim()
+            def kFile = rootProject.file('key.properties')
+            if (!kFile.exists()) {
+                kFile = file('key.properties')
+            }
+            if (kFile.exists()) {
+                try {
+                    def props = new Properties()
+                    props.load(new FileInputStream(kFile))
+                    keyAlias props['keyAlias'].toString().trim()
+                    keyPassword props['keyPassword'].toString().trim()
+                    storePassword props['storePassword'].toString().trim()
+
+                    def ksName = props['storeFile'].toString().trim()
+                    def ksFile = rootProject.file("app/${ksName}")
+                    if (!ksFile.exists()) {
+                        ksFile = rootProject.file(ksName)
+                    }
+                    if (!ksFile.exists()) {
+                        ksFile = file(ksName)
+                    }
+                    storeFile ksFile
+                } catch (Exception e) {
+                    println("Keystore loading warning: " + e.message)
+                }
             }
         }
     }
