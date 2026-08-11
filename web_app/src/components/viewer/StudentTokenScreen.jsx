@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyRound, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import { KeyRound, ShieldCheck, ArrowRight, AlertCircle, Download } from 'lucide-react';
 import { validateStudentToken } from '../../utils/tokenRotationManager';
 import { localExamStore } from '../../lib/supabase';
 
@@ -218,7 +218,32 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
           </button>
         </form>
 
-        <p className="text-[11px] text-ink-faint text-center mt-4 flex items-center justify-center gap-1.5">
+        {/* Download APK Banner for Students */}
+        <div className="mt-4 p-3.5 bg-console-panel border border-accent/30 rounded-xl flex items-center justify-between gap-3 shadow-panel">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-accent/15 text-accent border border-accent/30 flex items-center justify-center shrink-0">
+              <Download className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-xs text-ink-strong truncate">
+                Aplikasi HP Android Exambrowser
+              </h4>
+              <p className="text-[10px] text-ink-muted truncate">
+                Versi Resmi Signed APK v1.0.0
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://github.com/adinrefqi/Sumatif-SMP-THHK-Github-by-AG/releases/download/release-v1.0.0/app-release.apk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-accent hover:bg-accent-soft text-console-bg font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-colors shrink-0 flex items-center gap-1"
+          >
+            <span>Download APK</span>
+          </a>
+        </div>
+
+        <p className="text-[11px] text-ink-faint text-center mt-3 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-ok" />
           <span>Exambrowser Protected • Mode Pembaca Naskah Soal</span>
         </p>
