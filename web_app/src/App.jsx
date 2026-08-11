@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import PdfUploader from './components/admin/PdfUploader';
 import ProctorTokenMonitor from './components/admin/ProctorTokenMonitor';
-import LjkPrinter from './components/admin/LjkPrinter';
+
 import StudentTokenScreen from './components/viewer/StudentTokenScreen';
 import MobilePdfViewer from './components/viewer/MobilePdfViewer';
 import ExamTimerHeader from './components/viewer/ExamTimerHeader';
@@ -157,7 +157,7 @@ export default function App() {
                 <PdfUploader
                   onExamCreated={(newExam) => setActiveExam(newExam)}
                 />
-                <LjkPrinter />
+
               </div>
             )}
           </div>
