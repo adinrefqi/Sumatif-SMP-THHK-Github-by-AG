@@ -1,0 +1,27 @@
+name: smp_thhk_exambrowser
+description: "Exambrowser Android Flutter App for SMP THHK Sumatif Exam"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_inappwebview: ^6.0.0
+  flutter_windowmanager: ^0.2.0
+  kiosk_mode: ^3.0.0
+  audioplayers: ^6.0.0
+  battery_plus: ^6.0.0
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
