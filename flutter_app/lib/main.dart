@@ -38,7 +38,7 @@ class ExamScreen extends StatefulWidget {
 class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
   InAppWebViewController? _webViewController;
   final SecurityService _securityService = SecurityService();
-  static const String vercelExamUrl = "https://sumatif-smp-thhk.vercel.app";
+  static const String vercelExamUrl = "https://portal-sumatifthhk.vercel.app";
 
   @override
   void initState() {

@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private SecurityGuard securityGuard;
 
     // Vercel Production URL or Fallback Local Asset
-    private static final String VERCEL_EXAM_URL = "https://sumatif-smp-thhk.vercel.app";
+    private static final String VERCEL_EXAM_URL = "https://portal-sumatifthhk.vercel.app";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
