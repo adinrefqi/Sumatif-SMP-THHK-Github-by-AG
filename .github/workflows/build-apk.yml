@@ -58,6 +58,22 @@ jobs:
           name: SMP-THHK-Exambrowser-Flutter-APK
           path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Create Release & Attach Signed APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: release-v1.0.0
+          name: "SMP THHK Exambrowser Signed Release v1.0.0"
+          body: |
+            ### 📱 Aplikasi Exambrowser SMP THHK Tegal (Versi Signed Release)
+            - **Versi**: v1.0.0
+            - **Fitur Utama**: Multi-Active Exams, Tepat 3 Ruang Ujian (Ruang 1, 2, 3), Presensi TTD Digital, Berita Acara Proktor, Kiosk Security Lock, & Logo Resmi SMP THHK Tegal.
+            - **File**: `SMP-THHK-Exambrowser.apk` (Signed Official Release)
+          files: |
+            flutter_app/build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-native-apk:
     name: Build Native WebView APK
     runs-on: ubuntu-latest
