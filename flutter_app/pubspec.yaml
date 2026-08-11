@@ -9,11 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_inappwebview: ^6.0.0
-  kiosk_mode: ^2.0.2
-  audioplayers: ^6.0.0
-  battery_plus: ^6.0.0
-  cupertino_icons: ^1.0.8
+  flutter_inappwebview: any
+  kiosk_mode: any
+  audioplayers: any
+  battery_plus: any
+  cupertino_icons: any
 
 dev_dependencies:
   flutter_test:
