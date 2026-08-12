@@ -124,7 +124,7 @@ export default function StudentAttendanceModal({ studentInfo, examTitle, onConfi
             NISN: <span className="font-bold text-ink-strong">{studentInfo?.nisn || '-'}</span>
           </div>
           <div className="text-ink-faint text-[11px]">
-            Kelas: <span className="font-bold text-ink-strong">{studentInfo?.class || '8A'}</span>
+            Kelas: <span className="font-bold text-ink-strong">{studentInfo?.class || '8'}</span>
           </div>
           <div className="text-right text-[11px] text-ok font-bold flex items-center justify-end gap-1">
             <ShieldCheck className="w-3 h-3" />

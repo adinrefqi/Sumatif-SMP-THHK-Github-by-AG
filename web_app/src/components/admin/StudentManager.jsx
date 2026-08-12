@@ -6,7 +6,7 @@ import {
 import { isSupabaseConfigured, fetchStudents, addStudent, bulkAddStudents, deleteStudent } from '../../lib/supabase';
 
 const ROOMS = ['Ruang 1', 'Ruang 2', 'Ruang 3'];
-const CLASSES = ['7A', '7B', '8A', '8B', '9A', '9B'];
+const CLASSES = ['7', '8', '9'];
 
 export default function StudentManager() {
   const [students, setStudents] = useState([]);
@@ -18,7 +18,7 @@ export default function StudentManager() {
   // Manual form state
   const [nisn, setNisn] = useState('');
   const [name, setName] = useState('');
-  const [classVal, setClassVal] = useState('8A');
+  const [classVal, setClassVal] = useState('8');
   const [roomVal, setRoomVal] = useState('Ruang 1');
 
   const fileInputRef = useRef(null);
@@ -46,7 +46,7 @@ export default function StudentManager() {
         rows.push({
           nisn: cols[0],
           name: cols[1],
-          class: cols[2] || '8A',
+          class: cols[2] || '8',
           room: cols[3] || 'Ruang 1',
         });
       }
@@ -77,7 +77,7 @@ export default function StudentManager() {
   };
 
   const downloadTemplate = () => {
-    const header = 'nisn,name,class,room\n0080000001,Budi Santoso,8A,Ruang 1\n0080000002,Siti Aminah,8B,Ruang 2\n';
+    const header = 'nisn,name,class,room\n0080000001,Budi Santoso,8,Ruang 1\n0080000002,Siti Aminah,9,Ruang 2\n';
     const blob = new Blob([header], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

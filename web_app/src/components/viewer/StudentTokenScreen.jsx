@@ -8,7 +8,7 @@ import StudentAttendanceModal from './StudentAttendanceModal';
 export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, activeExam, activeExams = [] }) {
   const [studentName, setStudentName] = useState('');
   const [nisn, setNisn] = useState('');
-  const [studentClass, setStudentClass] = useState('8A');
+  const [studentClass, setStudentClass] = useState('8');
   const [selectedRoom, setSelectedRoom] = useState('Ruang 1');
   const [selectedExamId, setSelectedExamId] = useState('');
   const [inputToken, setInputToken] = useState('');
@@ -196,12 +196,9 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
                 onChange={(e) => setStudentClass(e.target.value)}
                 className={inputBase}
               >
-                <option value="7A">Kelas 7A</option>
-                <option value="7B">Kelas 7B</option>
-                <option value="8A">Kelas 8A</option>
-                <option value="8B">Kelas 8B</option>
-                <option value="9A">Kelas 9A</option>
-                <option value="9B">Kelas 9B</option>
+                <option value="7">Kelas 7</option>
+                <option value="8">Kelas 8</option>
+                <option value="9">Kelas 9</option>
               </select>
             </div>
           </div>
