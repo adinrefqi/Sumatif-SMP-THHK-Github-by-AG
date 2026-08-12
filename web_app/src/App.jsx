@@ -184,7 +184,6 @@ export default function App() {
                 <ExamTimerHeader
                   studentInfo={studentSession}
                   activeExam={studentSession?.exam || activeExams[0]}
-                  onRequestHelp={() => console.log('Proctor Help Requested')}
                 />
                 <MobilePdfViewer pdfUrl={studentSession?.exam?.pdf_url || activeExams[0]?.pdf_url} />
               </div>

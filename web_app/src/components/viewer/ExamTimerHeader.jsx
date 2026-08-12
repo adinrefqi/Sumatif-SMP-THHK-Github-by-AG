@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Battery, Bell, User } from 'lucide-react';
-import { localExamStore, pushHelpRequest } from '../../lib/supabase';
+import { Clock, Battery, User } from 'lucide-react';
+import { localExamStore } from '../../lib/supabase';
 
-export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp }) {
+export default function ExamTimerHeader({ studentInfo, activeExam }) {
   const [timeLeftSeconds, setTimeLeftSeconds] = useState((activeExam?.duration_minutes || 90) * 60);
   const [realtimeClock, setRealtimeClock] = useState('');
   const [batteryLevel, setBatteryLevel] = useState(85);
-  const [helpRequested, setHelpRequested] = useState(false);
   const lastHeartbeatRef = useRef(0);
 
   // Sync with Android Native Bridge if available
@@ -86,20 +85,6 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const handleHelpClick = () => {
-    setHelpRequested(true);
-    if (onRequestHelp) onRequestHelp();
-    // Kirim sinyal bantuan ke server (Supabase) supaya proktor di device mana pun melihatnya
-    const session = localExamStore.getActiveSession();
-    pushHelpRequest({
-      sessionId: session?.sessionId || null,
-      studentId: session?.studentId || session?.nisn || null,
-      studentName: studentInfo?.name || null,
-      examId: session?.examId || activeExam?.id || null,
-    });
-    alert('Sinyal Bantuan telah dikirim ke Dashboard Proktor/Pengawas Ruang.');
-  };
-
   const isLowTime = timeLeftSeconds < 300; // less than 5 mins
 
   return (
@@ -132,7 +117,7 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
         </span>
       </div>
 
-      {/* Right: Clock, Battery & Proctor Help */}
+      {/* Right: Clock & Battery */}
       <div className="flex items-center gap-2">
         <div className="hidden xs:flex flex-col items-end text-[9px] text-ink-faint font-mono leading-tight">
           <span className="font-bold text-ink-muted tabular-nums">{realtimeClock}</span>
@@ -141,19 +126,6 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
             <span className="tabular-nums">{batteryLevel}%</span>
           </span>
         </div>
-
-        <button
-          onClick={handleHelpClick}
-          className={`h-8 px-2.5 rounded-md text-[11px] font-bold transition-colors flex items-center gap-1.5 border ${
-            helpRequested
-              ? 'bg-accent text-console-bg border-accent'
-              : 'bg-console-raised hover:bg-console-line text-ink border-console-line'
-          }`}
-          title="Minta Bantuan Pengawas Ruang"
-        >
-          <Bell className={`w-3.5 h-3.5 ${helpRequested ? '' : 'text-accent'}`} />
-          <span className="hidden sm:inline">{helpRequested ? 'Bantuan Dikirim' : 'Panggil Pengawas'}</span>
-        </button>
       </div>
 
     </div>

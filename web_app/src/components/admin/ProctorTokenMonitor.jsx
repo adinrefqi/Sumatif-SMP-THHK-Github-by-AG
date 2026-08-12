@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle, FileSignature, ClipboardList, Lock, Edit3, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
 import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
-import { localExamStore, isSupabaseConfigured, fetchViolations, fetchLiveSessions, clearHelpRequest } from '../../lib/supabase';
+import { localExamStore, isSupabaseConfigured, fetchViolations, fetchLiveSessions } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
 
 export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, activeExams = [], isTokenAccessEnabled, isAdminRole, proctorRoom = 'Ruang 1' }) {
