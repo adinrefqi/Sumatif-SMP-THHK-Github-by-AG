@@ -293,3 +293,79 @@ export const localExamStore = {
     }
   }
 };
+
+// ---- Remote Supabase queries (cross-device proctor monitoring) ----
+
+// Fetch violations from the last N minutes (default 3 hours)
+export const fetchViolations = async (sinceMinutes = 180) => {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const since = new Date(Date.now() - sinceMinutes * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from('violation_logs')
+      .select('*')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error("Failed to fetch violations", err);
+    return [];
+  }
+};
+
+// Fetch active exam sessions (for online/offline status via last_seen_at)
+export const fetchLiveSessions = async () => {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from('exam_sessions')
+      .select('*')
+      .gte('last_seen_at', since)
+      .order('last_seen_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error("Failed to fetch live sessions", err);
+    return [];
+  }
+};
+
+// Record a student help request (status = HELP_NEEDED)
+export const pushHelpRequest = async ({ sessionId, studentId, studentName, examId }) => {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('student_logs')
+      .upsert({
+        exam_id: examId,
+        nisn: studentId,
+        student_name: studentName,
+        status: 'HELP_NEEDED',
+        last_active_at: new Date().toISOString(),
+      }, { onConflict: 'nisn' });
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Failed to push help request", err);
+    return false;
+  }
+};
+
+// Clear help-request flag for a student (proctor acknowledges)
+export const clearHelpRequest = async (studentId) => {
+  if (!isSupabaseConfigured || !studentId) return false;
+  try {
+    const { error } = await supabase
+      .from('student_logs')
+      .update({ status: 'ACTIVE' })
+      .eq('nisn', studentId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Failed to clear help request", err);
+    return false;
+  }
+};

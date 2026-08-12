@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle, FileSignature, ClipboardList, Lock, Edit3 } from 'lucide-react';
+import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle, FileSignature, ClipboardList, Lock, Edit3, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
 import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
-import { localExamStore } from '../../lib/supabase';
+import { localExamStore, isSupabaseConfigured, fetchViolations, fetchLiveSessions, clearHelpRequest } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
 
 export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, activeExams = [], isTokenAccessEnabled, isAdminRole, proctorRoom = 'Ruang 1' }) {
-  const [activeTab, setActiveTab] = useState('token'); // 'token' | 'attendance' | 'minutes'
+  const [activeTab, setActiveTab] = useState('token'); // 'token' | 'attendance' | 'minutes' | 'monitor'
   const [officialMinutes, setOfficialMinutes] = useState(localExamStore.getOfficialMinutes(proctorRoom));
   const [showMinutesForm, setShowMinutesForm] = useState(!localExamStore.getOfficialMinutes(proctorRoom) && !isAdminRole);
   const [attendanceList, setAttendanceList] = useState(localExamStore.getAttendanceRecords());
+  const [violations, setViolations] = useState([]);
+  const [liveSessions, setLiveSessions] = useState([]);
 
   const filteredAttendance = proctorRoom ? attendanceList.filter(r => r.room === proctorRoom) : attendanceList;
 
@@ -23,6 +25,19 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
     }, 2000);
     return () => clearInterval(interval);
   }, [proctorRoom]);
+
+  // Poll Supabase for cross-device violations & live sessions
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    const poll = () => {
+      fetchViolations().then(setViolations);
+      fetchLiveSessions().then(setLiveSessions);
+    };
+    poll();
+    const interval = setInterval(poll, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Interval timer for 15-min countdown
   useEffect(() => {
@@ -112,6 +127,22 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
           >
             <ClipboardList className="w-4 h-4" />
             <span>Berita Acara Ujian</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('monitor')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+              activeTab === 'monitor'
+                ? 'bg-accent text-console-bg'
+                : 'text-ink-muted hover:text-ink hover:bg-console-faint'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>Monitoring Integritas {violations.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-bad/20 text-bad rounded-full text-[9px] font-extrabold ml-0.5">
+                {violations.length}
+              </span>
+            )}</span>
           </button>
         </div>
 
@@ -372,6 +403,140 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
             </div>
           ) : (
             <p className="text-xs text-ink-muted italic text-center py-4">Belum ada data Berita Acara yang disubmit.</p>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: MONITORING INTEGRITAS UJIAN (cross-device via Supabase) */}
+      {activeTab === 'monitor' && (
+        <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6 animate-fadeUp">
+          <div className="flex items-center justify-between border-b border-console-line pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-accent" />
+              <h3 className="font-bold text-ink-strong text-sm tracking-tight">
+                Monitoring Integritas Ujian (Real-Time)
+              </h3>
+            </div>
+            {!isSupabaseConfigured ? (
+              <span className="px-2.5 py-1 bg-bad/10 text-bad border border-bad/30 rounded-md text-[10px] font-bold uppercase">
+                Supabase Belum Aktif
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 bg-ok/10 text-ok border border-ok/30 rounded-md text-[10px] font-bold uppercase flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-ok live-dot" />
+                Live dari Server
+              </span>
+            )}
+          </div>
+
+          {!isSupabaseConfigured ? (
+            <div className="p-8 text-center border border-dashed border-console-line rounded-xl bg-console-bg/50">
+              <ShieldAlert className="w-8 h-8 text-ink-faint mx-auto mb-2 opacity-50" />
+              <p className="text-xs font-semibold text-ink-muted">
+                Konfigurasi Supabase belum aktif di build ini.
+              </p>
+              <p className="text-[11px] text-ink-faint mt-0.5">
+                Set env VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY di Vercel lalu redeploy.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Online/Offline sessions summary */}
+              <div>
+                <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Wifi className="w-3.5 h-3.5 text-ok" />
+                  <span>Status Sesi Siswa ({liveSessions.length} aktif)</span>
+                </h4>
+                {liveSessions.length === 0 ? (
+                  <p className="text-xs text-ink-muted italic py-3">Belum ada sesi aktif terdeteksi.</p>
+                ) : (
+                  <div className="overflow-x-auto border border-console-line rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
+                          <th className="py-2.5 px-3">NISN / Siswa</th>
+                          <th className="py-2.5 px-3">Mapel</th>
+                          <th className="py-2.5 px-3">Terakhir Aktif</th>
+                          <th className="py-2.5 px-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-console-line">
+                        {liveSessions.map((s) => {
+                          const lastSeen = s.last_seen_at ? new Date(s.last_seen_at) : null;
+                          const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 2 * 60 * 1000;
+                          return (
+                            <tr key={s.id} className="hover:bg-console-faint/50">
+                              <td className="py-2 px-3 font-bold text-ink-strong">{s.id}</td>
+                              <td className="py-2 px-3 text-accent font-semibold">{s.subject || '-'}</td>
+                              <td className="py-2 px-3 text-ink-faint font-mono">
+                                {lastSeen ? lastSeen.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                              </td>
+                              <td className="py-2 px-3">
+                                {isOnline ? (
+                                  <span className="px-2 py-0.5 bg-ok/10 text-ok border border-ok/25 rounded-md text-[10px] font-bold flex items-center gap-1 w-fit">
+                                    <Wifi className="w-3 h-3" />
+                                    ONLINE
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-bad/10 text-bad border border-bad/25 rounded-md text-[10px] font-bold flex items-center gap-1 w-fit">
+                                    <WifiOff className="w-3 h-3" />
+                                    OFFLINE
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Violations list */}
+              <div>
+                <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-bad" />
+                  <span>Catatan Pelanggaran Terdeteksi ({violations.length})</span>
+                </h4>
+                {violations.length === 0 ? (
+                  <p className="text-xs text-ok italic py-3">Tidak ada pelanggaran terdeteksi. Semua siswa fokus mengerjakan ujian. 👍</p>
+                ) : (
+                  <div className="overflow-x-auto border border-console-line rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
+                          <th className="py-2.5 px-3">Waktu</th>
+                          <th className="py-2.5 px-3">NISN / Sesi</th>
+                          <th className="py-2.5 px-3">Jenis Pelanggaran</th>
+                          <th className="py-2.5 px-3">Detail</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-console-line">
+                        {violations.map((v) => {
+                          const t = v.created_at ? new Date(v.created_at) : null;
+                          const typeLabel = (v.type || 'unknown').replace(/_/g, ' ');
+                          return (
+                            <tr key={v.id} className="hover:bg-console-faint/50">
+                              <td className="py-2 px-3 text-ink-faint font-mono whitespace-nowrap">
+                                {t ? t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                              </td>
+                              <td className="py-2 px-3 font-mono text-ink-muted">{v.student_id || v.session_id || '-'}</td>
+                              <td className="py-2 px-3">
+                                <span className="px-2 py-0.5 bg-bad/10 text-bad border border-bad/25 rounded-md text-[10px] font-bold uppercase">
+                                  {typeLabel}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3 text-ink-muted">{v.detail || '-'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Battery, Bell, User } from 'lucide-react';
-import { localExamStore } from '../../lib/supabase';
+import { localExamStore, pushHelpRequest } from '../../lib/supabase';
 
 export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp }) {
   const [timeLeftSeconds, setTimeLeftSeconds] = useState((activeExam?.duration_minutes || 90) * 60);
@@ -89,6 +89,14 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
   const handleHelpClick = () => {
     setHelpRequested(true);
     if (onRequestHelp) onRequestHelp();
+    // Kirim sinyal bantuan ke server (Supabase) supaya proktor di device mana pun melihatnya
+    const session = localExamStore.getActiveSession();
+    pushHelpRequest({
+      sessionId: session?.sessionId || null,
+      studentId: session?.studentId || session?.nisn || null,
+      studentName: studentInfo?.name || null,
+      examId: session?.examId || activeExam?.id || null,
+    });
     alert('Sinyal Bantuan telah dikirim ke Dashboard Proktor/Pengawas Ruang.');
   };
 

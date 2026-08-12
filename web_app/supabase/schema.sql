@@ -57,7 +57,7 @@ create table if not exists public.student_logs (
   id uuid primary key default gen_random_uuid(),
   exam_id text,
   student_name text,
-  nisn text,
+  nisn text unique, -- unik per siswa, untuk upsert help request
   status text not null default 'ACTIVE', -- ACTIVE | HELP_NEEDED | DISCONNECTED
   violations_count integer not null default 0,
   last_active_at timestamptz not null default now()
@@ -70,6 +70,9 @@ create policy "anon_insert_student_logs" on public.student_logs
 
 create policy "anon_select_student_logs" on public.student_logs
   for select to anon using (true);
+
+create policy "anon_update_student_logs" on public.student_logs
+  for update to anon using (true) with check (true);
 
 -- ============================================================
 -- Catatan tambahan:
