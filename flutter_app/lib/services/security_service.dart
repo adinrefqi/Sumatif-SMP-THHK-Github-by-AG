@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:battery_plus/battery_plus.dart';
+import 'package:volume_controller/volume_controller.dart';
 
 class SecurityService {
   static final SecurityService _instance = SecurityService._internal();
@@ -18,8 +19,11 @@ class SecurityService {
     if (_isAlarmPlaying) return;
     _isAlarmPlaying = true;
     try {
-      // Set volume to 95%
-      await _audioPlayer.setVolume(0.95);
+      // Force System Volume to 90%
+      VolumeController.instance.showSystemUI = false;
+      await VolumeController.instance.setVolume(0.9);
+      // Set Player volume to max
+      await _audioPlayer.setVolume(1.0);
       // Play system alert sound or online tone URL
       await _audioPlayer.play(
         UrlSource('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg'),

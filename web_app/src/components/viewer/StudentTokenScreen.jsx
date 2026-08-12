@@ -62,10 +62,23 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
     // Save student attendance record locally
     localExamStore.saveAttendanceRecord(fullAttendance);
     if (onTokenValidated) {
-      onTokenValidated({
+      const session = {
         ...fullAttendance,
         exam: chosenExam
+      };
+      // Persist active session identity for heartbeat & violation logging
+      localExamStore.saveActiveSession({
+        sessionId: `sess-${Date.now()}-${(session.nisn || 'x').toString()}`,
+        studentId: session.nisn,
+        name: session.name,
+        className: session.class,
+        room: session.room,
+        examId: chosenExam?.id || null,
+        subject: chosenExam?.subject || null,
+        startedAt: Date.now(),
+        examDurationMinutes: chosenExam?.duration_minutes || 90
       });
+      onTokenValidated(session);
     }
   };
 

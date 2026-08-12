@@ -16,6 +16,9 @@ const LOCAL_STORAGE_PREVIOUS_TOKEN_KEY = 'thhk_token_previous';
 const LOCAL_STORAGE_ATTENDANCE_KEY = 'thhk_attendance_records';
 const LOCAL_STORAGE_OFFICIAL_MINUTES_KEY = 'thhk_official_minutes';
 const LOCAL_STORAGE_TOKEN_ACCESS_KEY = 'thhk_token_access_enabled';
+const LOCAL_STORAGE_ACTIVE_SESSION_KEY = 'thhk_active_session';
+const LOCAL_STORAGE_VIOLATION_LOG_KEY = 'thhk_violation_log';
+const LOCAL_STORAGE_LAST_HEARTBEAT_KEY = 'thhk_last_heartbeat';
 
 export const localExamStore = {
   getExams: () => {
@@ -197,6 +200,96 @@ export const localExamStore = {
       return Boolean(isEnabled);
     } catch {
       return true;
+    }
+  },
+  // Active Exam Session (identity for heartbeat & violation logging)
+  saveActiveSession: (session) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY, JSON.stringify(session));
+      return session;
+    } catch (e) {
+      console.error("Failed to save active session", e);
+      return null;
+    }
+  },
+  getActiveSession: () => {
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+  clearActiveSession: () => {
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+    } catch (e) {}
+  },
+  // Violation Log
+  getViolations: () => {
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_VIOLATION_LOG_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+  appendViolation: (type, detail = '') => {
+    const session = localExamStore.getActiveSession();
+    const entry = {
+      id: `viol-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      sessionId: session?.sessionId || null,
+      studentId: session?.studentId || session?.nisn || null,
+      type,
+      detail,
+      at: Date.now(),
+    };
+    try {
+      const log = localExamStore.getViolations();
+      log.push(entry);
+      // Cap log size (e.g. 500 entries) to avoid unbounded growth
+      localStorage.setItem(LOCAL_STORAGE_VIOLATION_LOG_KEY, JSON.stringify(log.slice(-500)));
+    } catch (e) {
+      console.error("Failed to append violation", e);
+    }
+    // Best-effort remote log when Supabase is configured
+    if (isSupabaseConfigured) {
+      supabase
+        .from('violation_logs')
+        .insert([{ session_id: entry.sessionId, student_id: entry.studentId, type, detail, created_at: new Date(entry.at).toISOString() }])
+        .then(() => {})
+        .catch((err) => console.error("Failed to sync violation to Supabase", err));
+    }
+    return entry;
+  },
+  clearViolations: () => {
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_VIOLATION_LOG_KEY);
+    } catch (e) {}
+  },
+  // Heartbeat
+  touchLastHeartbeat: () => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_LAST_HEARTBEAT_KEY, JSON.stringify({ at: Date.now() }));
+    } catch (e) {}
+  },
+  getLastHeartbeat: () => {
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_LAST_HEARTBEAT_KEY);
+      return data ? JSON.parse(data).at : null;
+    } catch {
+      return null;
+    }
+  },
+  // Remote "last seen" sync (optional, Supabase only)
+  touchLastSeenRemote: async (sessionId) => {
+    if (!isSupabaseConfigured || !sessionId) return;
+    try {
+      await supabase
+        .from('exam_sessions')
+        .upsert({ id: sessionId, last_seen_at: new Date().toISOString() }, { onConflict: 'id' });
+    } catch (err) {
+      console.error("Failed to sync last_seen to Supabase", err);
     }
   }
 };

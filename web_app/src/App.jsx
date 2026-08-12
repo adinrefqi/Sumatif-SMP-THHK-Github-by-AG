@@ -52,8 +52,19 @@ export default function App() {
 
   // Anti-Copy & Anti-ContextMenu Security Lock inside WebView
   useEffect(() => {
-    const disableCopy = (e) => e.preventDefault();
-    const disableContextMenu = (e) => e.preventDefault();
+    const disableCopy = (e) => {
+      e.preventDefault();
+      // Log copy attempt as a violation (best-effort)
+      if (localExamStore.getActiveSession()) {
+        localExamStore.appendViolation('copy');
+      }
+    };
+    const disableContextMenu = (e) => {
+      e.preventDefault();
+      if (localExamStore.getActiveSession()) {
+        localExamStore.appendViolation('contextmenu');
+      }
+    };
 
     document.addEventListener('copy', disableCopy);
     document.addEventListener('contextmenu', disableContextMenu);
@@ -64,6 +75,44 @@ export default function App() {
     };
   }, []);
 
+  // Violation listeners: track tab switching / window blur while exam is active
+  useEffect(() => {
+    if (!studentSession) return;
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        localExamStore.appendViolation('visibility_hidden');
+        // Also notify the native wrapper so it can log natively
+        if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+          window.flutter_inappwebview
+            .callHandler('ExambrowserBridge', 'violation', { type: 'visibility_hidden' })
+            .catch(() => {});
+        }
+      }
+    };
+    const onBlur = () => {
+      localExamStore.appendViolation('blur');
+      if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+        window.flutter_inappwebview
+          .callHandler('ExambrowserBridge', 'violation', { type: 'blur' })
+          .catch(() => {});
+      }
+    };
+    const onBeforeUnload = () => {
+      localExamStore.appendViolation('beforeunload');
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('beforeunload', onBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [studentSession]);
+
   const handleExitApp = () => {
     if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
       window.flutter_inappwebview.callHandler('ExambrowserBridge', 'exit');
@@ -73,6 +122,7 @@ export default function App() {
       const pin = window.prompt('Masukkan Password Admin Keamanan untuk Keluar (Default: 12345):');
       if (pin === '12345' || pin === 'THHK2026') {
         alert('Password Benar. Keluar dari Aplikasi Exambrowser.');
+        localExamStore.clearActiveSession();
         setStudentSession(null);
       } else if (pin) {
         alert('Password Salah!');

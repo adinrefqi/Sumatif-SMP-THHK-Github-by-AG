@@ -14,6 +14,10 @@ dependencies:
   audioplayers: any
   battery_plus: any
   cupertino_icons: any
+  wakelock_plus: ^1.7.0
+  screen_brightness: ^2.1.11
+  volume_controller: ^3.6.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

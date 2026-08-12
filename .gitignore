@@ -27,6 +27,7 @@ android_app/local.properties
 android_app/.idea/
 flutter_app/android/.gradle/
 flutter_app/android/app/build/
+flutter_app/android/local.properties
 flutter_app/build/
 flutter_app/.dart_tool/
 

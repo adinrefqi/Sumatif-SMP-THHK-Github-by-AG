@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Battery, Bell, User } from 'lucide-react';
+import { localExamStore } from '../../lib/supabase';
 
 export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp }) {
   const [timeLeftSeconds, setTimeLeftSeconds] = useState((activeExam?.duration_minutes || 90) * 60);
   const [realtimeClock, setRealtimeClock] = useState('');
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [helpRequested, setHelpRequested] = useState(false);
+  const lastHeartbeatRef = useRef(0);
 
   // Sync with Android Native Bridge if available
   useEffect(() => {
@@ -24,13 +26,50 @@ export default function ExamTimerHeader({ studentInfo, activeExam, onRequestHelp
     }
   }, []);
 
-  // Countdown Exam Timer & Realtime Clock
+  // Countdown Exam Timer & Realtime Clock + Heartbeat
   useEffect(() => {
+    const HEARTBEAT_INTERVAL_MS = 30000; // local heartbeat every 30s (battery friendly)
+    const REMOTE_SYNC_INTERVAL_MS = 60000; // remote last-seen sync every 60s (only if Supabase)
+
+    const sendHeartbeat = () => {
+      const session = localExamStore.getActiveSession();
+      const now = Date.now();
+      localExamStore.touchLastHeartbeat();
+      if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+        window.flutter_inappwebview
+          .callHandler('ExambrowserBridge', 'heartbeat', {
+            sessionId: session?.sessionId || null,
+            studentId: session?.studentId || null,
+            ts: now,
+          })
+          .catch(() => {});
+      }
+    };
+
+    const syncRemoteLastSeen = () => {
+      const session = localExamStore.getActiveSession();
+      // Optional remote "last seen" sync (Supabase only, no-op otherwise)
+      if (session?.sessionId) {
+        localExamStore.touchLastSeenRemote(session.sessionId);
+      }
+    };
+
     const timer = setInterval(() => {
       setTimeLeftSeconds(prev => (prev > 0 ? prev - 1 : 0));
 
       const now = new Date();
       setRealtimeClock(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+
+      const elapsed = now.getTime() - lastHeartbeatRef.current;
+      // Local heartbeat every 30s
+      if (elapsed >= HEARTBEAT_INTERVAL_MS) {
+        lastHeartbeatRef.current = now.getTime();
+        sendHeartbeat();
+      }
+      // Remote sync every 60s (throttled separately to save battery/bandwidth)
+      if (elapsed >= REMOTE_SYNC_INTERVAL_MS) {
+        syncRemoteLastSeen();
+      }
     }, 1000);
 
     return () => clearInterval(timer);
