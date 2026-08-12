@@ -3,7 +3,36 @@
 -- Jalankan di: Supabase Dashboard → SQL Editor → New query
 -- ============================================================
 
--- 1. violation_logs: catatan pelanggaran integritas ujian
+-- 1. exam_sessions: daftar ujian yang diterbitkan admin
+--    id berupa string seperti 'exam-1786540000000' (dikirim dari kode web)
+create table if not exists public.exam_sessions (
+  id text primary key,
+  title text,
+  subject text,
+  grade text,
+  duration_minutes integer,
+  pdf_url text,
+  file_name text,
+  source_type text default 'gdrive',
+  created_at timestamptz not null default now(),
+  -- kolom integritas ujian
+  last_seen_at timestamptz,
+  violations_count integer not null default 0,
+  status text not null default 'ACTIVE' -- ACTIVE | HELP_NEEDED | DISCONNECTED
+);
+
+alter table public.exam_sessions enable row level security;
+
+create policy "anon_insert_exam_sessions" on public.exam_sessions
+  for insert to anon with check (true);
+
+create policy "anon_select_exam_sessions" on public.exam_sessions
+  for select to anon using (true);
+
+create policy "anon_update_exam_sessions" on public.exam_sessions
+  for update to anon using (true) with check (true);
+
+-- 2. violation_logs: catatan pelanggaran integritas ujian
 create table if not exists public.violation_logs (
   id uuid primary key default gen_random_uuid(),
   session_id text,
@@ -22,12 +51,6 @@ create policy "anon_insert_violation_logs" on public.violation_logs
 
 create policy "anon_select_violation_logs" on public.violation_logs
   for select to anon using (true);
-
--- 2. exam_sessions: kolom integritas (jika tabel sudah ada dari kode)
-alter table public.exam_sessions
-  add column if not exists last_seen_at timestamptz,
-  add column if not exists violations_count integer not null default 0,
-  add column if not exists status text not null default 'ACTIVE';
 
 -- 3. student_logs: status siswa per ujian (Desain.md)
 create table if not exists public.student_logs (
@@ -50,9 +73,13 @@ create policy "anon_select_student_logs" on public.student_logs
 
 -- ============================================================
 -- Catatan tambahan:
--- 1. Bucket 'exam-pdfs' (Storage) harus ada & publik untuk upload PDF.
---    Buat manual di Dashboard → Storage → New bucket
---    (name: exam-pdfs, public: ON) bila belum ada.
+-- 1. Bucket Storage 'exam-pdfs' TIDAK diperlukan lagi — upload
+--    file PDF sudah dihapus; naskah soal hanya via Link Google Drive.
 -- 2. Anon key didesain untuk frontend (publik). RLS di atas
---    membatasi agar anon hanya insert/select, tidak bisa update/delete.
+--    membatasi agar anon hanya insert/select; update hanya
+--    diizinkan di exam_sessions (untuk heartbeat last_seen_at).
+-- 3. Jika tabel exam_sessions PERNAH dibuat sebelumnya dengan
+--    id bertipe uuid (bukan text), jalankan dulu:
+--      drop table if exists public.exam_sessions cascade;
+--    lalu jalankan ulang skrip ini. (Kode web mengirim id string.)
 -- ============================================================
