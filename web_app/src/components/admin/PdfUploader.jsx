@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  UploadCloud, FileText, CheckCircle2, AlertCircle, Link as LinkIcon,
-  Lock, Unlock, ShieldAlert, Eye, X, Smartphone, CheckCheck, Layers,
-  Trash2, Star, Check, Plus, RefreshCw, FolderKanban
+  UploadCloud, CheckCircle2, AlertCircle,
+  Lock, Unlock, ShieldAlert, Eye, X, Smartphone, CheckCheck,
+  Trash2, Check, FolderKanban
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured, localExamStore } from '../../lib/supabase';
 import MobilePdfViewer from '../viewer/MobilePdfViewer';
@@ -15,18 +15,13 @@ export default function PdfUploader({
   onToggleActiveExamId,
   activeExams = []
 }) {
-  const [sourceType, setSourceType] = useState('file'); // 'file' | 'gdrive' | 'batch'
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('Bahasa Indonesia');
   const [grade, setGrade] = useState('Kelas 8');
   const [duration, setDuration] = useState(90);
-  const [pdfFile, setPdfFile] = useState(null);
   const [gdriveUrl, setGdriveUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState(null);
-
-  // Batch Upload States
-  const [batchItems, setBatchItems] = useState([]);
 
   // Modal Preview Inspector
   const [showPdfCheckModal, setShowPdfCheckModal] = useState(false);
@@ -54,103 +49,10 @@ export default function PdfUploader({
     return urlStr;
   };
 
-  // Smart Filename Parser Helper
-  const parseFilenameMetadata = (fileNameStr) => {
-    const lower = fileNameStr.toLowerCase();
-    
-    // Subject detection
-    let detectedSubject = 'Bahasa Indonesia';
-    if (lower.includes('matematika') || lower.includes('mtk') || lower.includes('math')) detectedSubject = 'Matematika';
-    else if (lower.includes('inggris') || lower.includes('english') || lower.includes('bing')) detectedSubject = 'Bahasa Inggris';
-    else if (lower.includes('ipa') || lower.includes('sains') || lower.includes('science')) detectedSubject = 'IPA (Ilmu Pengetahuan Alam)';
-    else if (lower.includes('ips') || lower.includes('sosial')) detectedSubject = 'IPS (Ilmu Pengetahuan Sosial)';
-    else if (lower.includes('pancasila') || lower.includes('ppkn') || lower.includes('pkn')) detectedSubject = 'Pancasila / PPKn';
-    else if (lower.includes('agama') || lower.includes('pai') || lower.includes('kristen')) detectedSubject = 'Pendidikan Agama';
-    else if (lower.includes('informatika') || lower.includes('tik') || lower.includes('komputer')) detectedSubject = 'Informatika';
-    else if (lower.includes('seni') || lower.includes('budaya') || lower.includes('art')) detectedSubject = 'Seni & Budaya';
-    else if (lower.includes('indonesia') || lower.includes('bindo')) detectedSubject = 'Bahasa Indonesia';
-
-    // Grade detection
-    let detectedGrade = 'Kelas 8';
-    if (lower.includes('kelas 7') || lower.includes('kelas vii') || lower.includes('_7_') || lower.includes('-7-') || lower.includes('_7.') || lower.includes(' 7 ')) detectedGrade = 'Kelas 7';
-    else if (lower.includes('kelas 9') || lower.includes('kelas ix') || lower.includes('_9_') || lower.includes('-9-') || lower.includes('_9.') || lower.includes(' 9 ')) detectedGrade = 'Kelas 9';
-    else if (lower.includes('kelas 8') || lower.includes('kelas viii') || lower.includes('_8_') || lower.includes('-8-') || lower.includes('_8.') || lower.includes(' 8 ')) detectedGrade = 'Kelas 8';
-
-    // Title generation
-    const cleanName = fileNameStr
-      .replace(/\.pdf$/i, '')
-      .replace(/_/g, ' ')
-      .replace(/-/g, ' ')
-      .trim();
-
-    return {
-      title: `Sumatif ${cleanName.charAt(0).toUpperCase() + cleanName.slice(1)}`,
-      subject: detectedSubject,
-      grade: detectedGrade,
-      duration: 90
-    };
-  };
-
-  // Single File Input Handler
-  const handleSingleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      setPdfFile(file);
-      setMessage(null);
-      if (!title) {
-        const parsed = parseFilenameMetadata(file.name);
-        setTitle(parsed.title);
-        setSubject(parsed.subject);
-        setGrade(parsed.grade);
-      }
-    } else {
-      setMessage({ type: 'error', text: 'Format file harus berupa PDF (.pdf)' });
-    }
-  };
-
-  // Batch Multi-File Dropzone Handler
-  const handleBatchFilesChange = (e) => {
-    const files = Array.from(e.target.files).filter(f => f.type === 'application/pdf');
-    if (files.length === 0) {
-      setMessage({ type: 'error', text: 'Format file harus berupa dokumen PDF (.pdf)' });
-      return;
-    }
-
-    const items = files.map((file, idx) => {
-      const parsed = parseFilenameMetadata(file.name);
-      return {
-        id: `batch-${Date.now()}-${idx}`,
-        file,
-        title: parsed.title,
-        subject: parsed.subject,
-        grade: parsed.grade,
-        duration: 90
-      };
-    });
-
-    setBatchItems(prev => [...prev, ...items]);
-    setMessage({ type: 'success', text: `${files.length} file PDF berhasil dimasukkan ke daftar batch.` });
-  };
-
-  const handleUpdateBatchItem = (id, field, value) => {
-    setBatchItems(prev =>
-      prev.map(item => item.id === id ? { ...item, [field]: value } : item)
-    );
-  };
-
-  const handleRemoveBatchItem = (id) => {
-    setBatchItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  // Single Submit
+  // Single Submit (Google Drive link only)
   const handleSingleSubmit = async (e) => {
     e.preventDefault();
-    if (sourceType === 'file' && !pdfFile && !title) {
-      setMessage({ type: 'error', text: 'Silakan isi judul ujian dan pilih file PDF naskah soal' });
-      return;
-    }
-
-    if (sourceType === 'gdrive' && !gdriveUrl.trim()) {
+    if (!gdriveUrl.trim()) {
       setMessage({ type: 'error', text: 'Silakan masukkan URL/Link Google Drive Naskah Soal' });
       return;
     }
@@ -159,33 +61,8 @@ export default function PdfUploader({
     setMessage(null);
 
     try {
-      let finalPdfUrl = null;
-      let fileName = 'Naskah_Soal.pdf';
-
-      if (sourceType === 'gdrive') {
-        finalPdfUrl = convertGDriveUrl(gdriveUrl.trim());
-        fileName = 'Naskah_Google_Drive.pdf';
-      } else if (isSupabaseConfigured && pdfFile) {
-        const fileExt = pdfFile.name.split('.').pop();
-        const fileNameGen = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `exam_pdfs/${fileNameGen}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('exam-pdfs')
-          .upload(filePath, pdfFile);
-
-        if (uploadError) throw uploadError;
-
-        const { data: publicUrlData } = supabase.storage
-          .from('exam-pdfs')
-          .getPublicUrl(filePath);
-
-        finalPdfUrl = publicUrlData.publicUrl;
-        fileName = pdfFile.name;
-      } else if (pdfFile) {
-        finalPdfUrl = URL.createObjectURL(pdfFile);
-        fileName = pdfFile.name;
-      }
+      const finalPdfUrl = convertGDriveUrl(gdriveUrl.trim());
+      const fileName = 'Naskah_Google_Drive.pdf';
 
       const newExam = {
         id: `exam-${Date.now()}`,
@@ -195,7 +72,7 @@ export default function PdfUploader({
         duration_minutes: Number(duration),
         pdf_url: finalPdfUrl,
         file_name: fileName,
-        source_type: sourceType,
+        source_type: 'gdrive',
         created_at: new Date().toISOString()
       };
 
@@ -212,8 +89,7 @@ export default function PdfUploader({
       localExamStore.saveExams(updatedExams);
       reloadExams();
 
-      setMessage({ type: 'success', text: 'Naskah soal PDF berhasil diterbitkan & disinkronkan ke sistem.' });
-      setPdfFile(null);
+      setMessage({ type: 'success', text: 'Naskah soal berhasil diterbitkan & disinkronkan ke sistem.' });
       setGdriveUrl('');
       setTitle('');
 
@@ -228,83 +104,11 @@ export default function PdfUploader({
     }
   };
 
-  // Batch Submit All Items
-  const handleBatchSubmit = async () => {
-    if (batchItems.length === 0) return;
-    setIsUploading(true);
-    setMessage(null);
-
-    try {
-      const newExamsList = [];
-
-      for (let i = 0; i < batchItems.length; i++) {
-        const item = batchItems[i];
-        let pdfUrl = null;
-
-        if (isSupabaseConfigured && item.file) {
-          const fileExt = item.file.name.split('.').pop();
-          const fileNameGen = `${Date.now()}_${i}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const filePath = `exam_pdfs/${fileNameGen}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('exam-pdfs')
-            .upload(filePath, item.file);
-
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage
-              .from('exam-pdfs')
-              .getPublicUrl(filePath);
-            pdfUrl = publicUrlData.publicUrl;
-          }
-        } else if (item.file) {
-          pdfUrl = URL.createObjectURL(item.file);
-        }
-
-        const newExam = {
-          id: `exam-${Date.now()}-${i}`,
-          title: item.title,
-          subject: item.subject,
-          grade: item.grade,
-          duration_minutes: Number(item.duration),
-          pdf_url: pdfUrl,
-          file_name: item.file ? item.file.name : 'Naskah_Soal.pdf',
-          source_type: 'batch_file',
-          created_at: new Date().toISOString()
-        };
-
-        newExamsList.push(newExam);
-      }
-
-      if (isSupabaseConfigured && newExamsList.length > 0) {
-        await supabase.from('exam_sessions').insert(newExamsList);
-      }
-
-      const existingExams = localExamStore.getExams();
-      const allExams = [...newExamsList, ...existingExams];
-      localExamStore.saveExams(allExams);
-      reloadExams();
-
-      setMessage({ type: 'success', text: `Berhasil menerbitkan ${newExamsList.length} naskah soal sekaligus ke Bank Soal Master!` });
-      setBatchItems([]);
-
-      if (onExamCreated && newExamsList[0]) {
-        onExamCreated(newExamsList[0]);
-      }
-    } catch (err) {
-      console.error('Batch Upload Error:', err);
-      setMessage({ type: 'error', text: `Gagal mengunggah batch: ${err.message || 'Terjadi kesalahan'}` });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleOpenPdfCheck = (urlOverride) => {
     let urlToTest = urlOverride || null;
     if (!urlToTest) {
-      if (sourceType === 'gdrive' && gdriveUrl.trim()) {
+      if (gdriveUrl.trim()) {
         urlToTest = convertGDriveUrl(gdriveUrl.trim());
-      } else if (pdfFile) {
-        urlToTest = URL.createObjectURL(pdfFile);
       } else {
         urlToTest = activeExam?.pdf_url || savedExams[0]?.pdf_url || null;
       }
@@ -442,46 +246,12 @@ export default function PdfUploader({
             <UploadCloud className="w-5 h-5 text-accent" />
             <div>
               <h2 className="font-extrabold text-ink-strong text-sm tracking-tight">
-                Manajemen & Upload Naskah Soal PDF (Super Admin)
+                Manajemen & Upload Naskah Soal (Super Admin)
               </h2>
               <p className="text-[11px] text-ink-muted">
-                Dukungan Upload Tunggal, Link Google Drive, dan **Batch Upload Banyak File**
+                Terbitkan naskah soal ujian via Link Google Drive
               </p>
             </div>
-          </div>
-
-          {/* Mode Switcher Tabs */}
-          <div className="flex bg-console-bg border border-console-line p-1 rounded-lg text-xs font-bold shrink-0">
-            <button
-              type="button"
-              onClick={() => setSourceType('file')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
-                sourceType === 'file' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Single PDF</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSourceType('gdrive')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
-                sourceType === 'gdrive' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              <LinkIcon className="w-3.5 h-3.5" />
-              <span>Link GDrive</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSourceType('batch')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
-                sourceType === 'batch' ? 'bg-accent text-console-bg' : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Batch Upload (Banyak)</span>
-            </button>
           </div>
         </div>
 
@@ -500,279 +270,108 @@ export default function PdfUploader({
           </div>
         )}
 
-        {/* MODE 1 & 2: SINGLE FILE OR GDRIVE LINK */}
-        {sourceType !== 'batch' ? (
-          <form onSubmit={handleSingleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Judul Ujian Sumatif *</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Contoh: Sumatif Akhir Semester Bahasa Indonesia"
-                  className={inputCls}
-                />
-              </div>
-
-              <div>
-                <label className={labelCls}>Mata Pelajaran</label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                  <option value="Matematika">Matematika</option>
-                  <option value="Bahasa Inggris">Bahasa Inggris</option>
-                  <option value="IPA (Ilmu Pengetahuan Alam)">IPA (Ilmu Pengetahuan Alam)</option>
-                  <option value="IPS (Ilmu Pengetahuan Sosial)">IPS (Ilmu Pengetahuan Sosial)</option>
-                  <option value="Pancasila / PPKn">Pancasila / PPKn</option>
-                  <option value="Pendidikan Agama">Pendidikan Agama</option>
-                  <option value="Informatika">Informatika</option>
-                  <option value="Seni & Budaya">Seni & Budaya</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Tingkat Kelas</label>
-                <select
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="Kelas 7">Kelas VII (7)</option>
-                  <option value="Kelas 8">Kelas VIII (8)</option>
-                  <option value="Kelas 9">Kelas IX (9)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Durasi Ujian (Menit)</label>
-                <input
-                  type="number"
-                  min="15"
-                  max="240"
-                  required
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-            </div>
-
-            {sourceType === 'file' ? (
-              <div>
-                <label className={labelCls}>Pilih File PDF Soal Ujian *</label>
-                <div className="border border-dashed border-console-line hover:border-accent/50 rounded-lg p-4 text-center cursor-pointer transition-colors bg-console-faint/60 relative">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleSingleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  {pdfFile ? (
-                    <div className="flex items-center justify-center gap-2 text-accent-soft font-semibold text-sm py-2">
-                      <FileText className="w-5 h-5" />
-                      <span>{pdfFile.name} ({(pdfFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
-                    </div>
-                  ) : (
-                    <div className="py-3">
-                      <UploadCloud className="w-8 h-8 text-ink-faint mx-auto mb-1.5" />
-                      <p className="text-sm font-medium text-ink">
-                        Klik atau seret file PDF naskah soal ke sini
-                      </p>
-                      <p className="text-[11px] text-ink-faint mt-0.5">Format dokumen .pdf (Maksimal 25MB)</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className={labelCls}>URL / Link Share Google Drive Document *</label>
-                <div className="relative">
-                  <input
-                    type="url"
-                    required
-                    value={gdriveUrl}
-                    onChange={(e) => setGdriveUrl(e.target.value)}
-                    placeholder="https://drive.google.com/file/d/1A2B3C.../view?usp=sharing"
-                    className={inputCls}
-                  />
-                </div>
-                <p className="text-[11px] text-ink-faint mt-1.5 flex items-center gap-1">
-                  <ShieldAlert className="w-3.5 h-3.5 text-accent" />
-                  <span>Pastikan izin akses dokumen di Google Drive diatur ke: <strong>"Siapa saja yang memiliki link"</strong></span>
-                </p>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="flex-1 py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-              >
-                {isUploading ? (
-                  <span>Mengunggah Naskah Soal...</span>
-                ) : (
-                  <span>Terbitkan Soal & Aktifkan Sesi Ujian</span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleOpenPdfCheck()}
-                className="px-4 py-2.5 bg-console-raised hover:bg-console-line border border-console-line text-ink font-bold rounded-lg text-[11px] uppercase tracking-wider transition-colors flex items-center gap-1.5"
-              >
-                <Eye className="w-4 h-4 text-accent" />
-                <span>Uji Tampilan</span>
-              </button>
-            </div>
-          </form>
-        ) : (
-          /* MODE 3: BATCH MULTI-FILE UPLOAD MODE */
-          <div className="space-y-4 animate-fadeUp">
-            
-            {/* Batch Multi-File Dropzone */}
-            <div className="border-2 border-dashed border-accent/40 hover:border-accent rounded-xl p-6 text-center cursor-pointer transition-colors bg-accent/5 relative">
+        {/* MODE: GDRIVE LINK */}
+        <form onSubmit={handleSingleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Judul Ujian Sumatif *</label>
               <input
-                type="file"
-                accept=".pdf"
-                multiple
-                onChange={handleBatchFilesChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Contoh: Sumatif Akhir Semester Bahasa Indonesia"
+                className={inputCls}
               />
-              <div className="py-2">
-                <Layers className="w-10 h-10 text-accent mx-auto mb-2" />
-                <h4 className="text-sm font-extrabold text-ink-strong">
-                  Pilih & Seret Banyak File PDF Sekaligus (Batch Dropzone)
-                </h4>
-                <p className="text-xs text-ink-muted mt-1">
-                  Sistem otomatis mendeteksi Mata Pelajaran, Kelas, dan Judul Ujian dari nama file PDF.
-                </p>
-                <span className="inline-block mt-3 px-3 py-1 bg-accent/15 border border-accent/30 text-accent text-[11px] font-bold rounded-lg uppercase tracking-wider">
-                  Klik untuk Memilih Banyak PDF
-                </span>
-              </div>
             </div>
 
-            {/* Batch Items Review Table */}
-            {batchItems.length > 0 && (
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider flex items-center gap-1.5">
-                    <FolderKanban className="w-4 h-4 text-accent" />
-                    <span>Daftar File Batch Siap Terbit ({batchItems.length} File)</span>
-                  </h4>
+            <div>
+              <label className={labelCls}>Mata Pelajaran</label>
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className={inputCls}
+              >
+                <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                <option value="Matematika">Matematika</option>
+                <option value="Bahasa Inggris">Bahasa Inggris</option>
+                <option value="IPA (Ilmu Pengetahuan Alam)">IPA (Ilmu Pengetahuan Alam)</option>
+                <option value="IPS (Ilmu Pengetahuan Sosial)">IPS (Ilmu Pengetahuan Sosial)</option>
+                <option value="Pancasila / PPKn">Pancasila / PPKn</option>
+                <option value="Pendidikan Agama">Pendidikan Agama</option>
+                <option value="Informatika">Informatika</option>
+                <option value="Seni & Budaya">Seni & Budaya</option>
+              </select>
+            </div>
 
-                  <button
-                    onClick={() => setBatchItems([])}
-                    className="text-[11px] font-bold text-bad hover:underline"
-                  >
-                    Bersihkan Daftar
-                  </button>
-                </div>
+            <div>
+              <label className={labelCls}>Tingkat Kelas</label>
+              <select
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                className={inputCls}
+              >
+                <option value="Kelas 7">Kelas VII (7)</option>
+                <option value="Kelas 8">Kelas VIII (8)</option>
+                <option value="Kelas 9">Kelas IX (9)</option>
+              </select>
+            </div>
 
-                <div className="overflow-x-auto border border-console-line rounded-xl bg-console-raised">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
-                        <th className="py-2.5 px-3">Nama File</th>
-                        <th className="py-2.5 px-3">Judul Naskah Soal</th>
-                        <th className="py-2.5 px-3">Mata Pelajaran</th>
-                        <th className="py-2.5 px-3">Tingkat Kelas</th>
-                        <th className="py-2.5 px-3">Durasi</th>
-                        <th className="py-2.5 px-3 text-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-console-line">
-                      {batchItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-console-faint/60">
-                          <td className="py-2 px-3 font-mono text-[11px] text-ink-faint truncate max-w-[140px]">
-                            {item.file.name}
-                          </td>
-                          <td className="py-2 px-3">
-                            <input
-                              type="text"
-                              value={item.title}
-                              onChange={(e) => handleUpdateBatchItem(item.id, 'title', e.target.value)}
-                              className="w-full px-2 py-1 bg-console-bg border border-console-line rounded text-xs font-semibold text-ink-strong"
-                            />
-                          </td>
-                          <td className="py-2 px-3">
-                            <select
-                              value={item.subject}
-                              onChange={(e) => handleUpdateBatchItem(item.id, 'subject', e.target.value)}
-                              className="px-2 py-1 bg-console-bg border border-console-line rounded text-xs text-ink-strong"
-                            >
-                              <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                              <option value="Matematika">Matematika</option>
-                              <option value="Bahasa Inggris">Bahasa Inggris</option>
-                              <option value="IPA (Ilmu Pengetahuan Alam)">IPA</option>
-                              <option value="IPS (Ilmu Pengetahuan Sosial)">IPS</option>
-                              <option value="Pancasila / PPKn">Pancasila / PPKn</option>
-                              <option value="Pendidikan Agama">Pendidikan Agama</option>
-                              <option value="Informatika">Informatika</option>
-                              <option value="Seni & Budaya">Seni & Budaya</option>
-                            </select>
-                          </td>
-                          <td className="py-2 px-3">
-                            <select
-                              value={item.grade}
-                              onChange={(e) => handleUpdateBatchItem(item.id, 'grade', e.target.value)}
-                              className="px-2 py-1 bg-console-bg border border-console-line rounded text-xs text-ink-strong"
-                            >
-                              <option value="Kelas 7">Kelas 7</option>
-                              <option value="Kelas 8">Kelas 8</option>
-                              <option value="Kelas 9">Kelas 9</option>
-                            </select>
-                          </td>
-                          <td className="py-2 px-3">
-                            <input
-                              type="number"
-                              min="15"
-                              value={item.duration}
-                              onChange={(e) => handleUpdateBatchItem(item.id, 'duration', e.target.value)}
-                              className="w-16 px-2 py-1 bg-console-bg border border-console-line rounded text-xs font-mono font-bold text-accent"
-                            />
-                          </td>
-                          <td className="py-2 px-3 text-center">
-                            <button
-                              onClick={() => handleRemoveBatchItem(item.id)}
-                              className="p-1 text-ink-faint hover:text-bad transition-colors"
-                              title="Hapus dari batch"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isUploading}
-                  onClick={handleBatchSubmit}
-                  className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-xs font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
-                >
-                  {isUploading ? (
-                    <span>Menerbitkan Batch PDF...</span>
-                  ) : (
-                    <>
-                      <CheckCheck className="w-4 h-4" />
-                      <span>Terbitkan Semua Naskah Soal ({batchItems.length} File)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
+            <div>
+              <label className={labelCls}>Durasi Ujian (Menit)</label>
+              <input
+                type="number"
+                min="15"
+                max="240"
+                required
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                className={inputCls}
+              />
+            </div>
           </div>
-        )}
+
+          <div>
+            <label className={labelCls}>URL / Link Share Google Drive Document *</label>
+            <div className="relative">
+              <input
+                type="url"
+                required
+                value={gdriveUrl}
+                onChange={(e) => setGdriveUrl(e.target.value)}
+                placeholder="https://drive.google.com/file/d/1A2B3C.../view?usp=sharing"
+                className={inputCls}
+              />
+            </div>
+            <p className="text-[11px] text-ink-faint mt-1.5 flex items-center gap-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-accent" />
+              <span>Pastikan izin akses dokumen di Google Drive diatur ke: <strong>"Siapa saja yang memiliki link"</strong></span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="flex-1 py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {isUploading ? (
+                <span>Menerbitkan Naskah Soal...</span>
+              ) : (
+                <span>Terbitkan Soal & Aktifkan Sesi Ujian</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenPdfCheck()}
+              className="px-4 py-2.5 bg-console-raised hover:bg-console-line border border-console-line text-ink font-bold rounded-lg text-[11px] uppercase tracking-wider transition-colors flex items-center gap-1.5"
+            >
+              <Eye className="w-4 h-4 text-accent" />
+              <span>Uji Tampilan</span>
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* MASTER EXAM BANK SECTION (Daftar Bank Soal Master) */}
