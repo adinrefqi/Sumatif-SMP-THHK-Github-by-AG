@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 class ExitPasswordDialog extends StatefulWidget {
   final VoidCallback onSuccess;
 
-  const ExitPasswordDialog({Key? key, required this.onSuccess}) : super(key: key);
+  const ExitPasswordDialog({super.key, required this.onSuccess});
 
   @override
   State<ExitPasswordDialog> createState() => _ExitPasswordDialogState();

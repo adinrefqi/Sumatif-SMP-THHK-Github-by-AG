@@ -4,11 +4,16 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #0B0F14;
-  color: #D6DEE8;
+  background-color: #F6F8FB;
+  color: #374151;
+  -webkit-font-smoothing: antialiased;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+::selection {
+  background-color: rgba(26, 86, 219, 0.18);
 }
 
 /* Custom Scrollbar */
@@ -20,17 +25,17 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #232E3C;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #37455a;
+  background: #94A3B8;
 }
 
 /* Canvas styling for PDF render */
 .pdf-canvas-container {
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.7);
-  border-radius: 6px;
+  box-shadow: 0 8px 24px -12px rgba(16, 24, 40, 0.25);
+  border-radius: 8px;
   overflow: hidden;
   background-color: white;
 }

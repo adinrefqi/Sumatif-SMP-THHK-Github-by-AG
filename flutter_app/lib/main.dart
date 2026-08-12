@@ -48,7 +48,7 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
 
   Future<void> _initSecurityGuard() async {
     // 1. Hide System Bars & Enable Immersive Sticky Mode
-    await SystemChrome.setEnabledSystemUIMode(SystemUIMode.immersiveSticky);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     // 3. Enable Kiosk Mode
     try {
@@ -69,7 +69,7 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
       _securityService.playSirenAlarm();
     } else if (state == AppLifecycleState.resumed) {
       _securityService.stopSirenAlarm();
-      SystemChrome.setEnabledSystemUIMode(SystemUIMode.immersiveSticky);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     }
     // Note: 'inactive' (e.g. showing the exit-password dialog) does NOT trigger
     // the siren, so the proctor can open dialogs without setting off the alarm.
@@ -82,7 +82,6 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
       builder: (context) => ExitPasswordDialog(
         onSuccess: () async {
           await stopKioskMode();
-          await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
         },
       ),
     );

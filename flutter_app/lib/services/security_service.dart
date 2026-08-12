@@ -1,6 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:battery_plus/battery_plus.dart';
-import 'package:flutter/services.dart';
 
 class SecurityService {
   static final SecurityService _instance = SecurityService._internal();
