@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { KeyRound, ShieldCheck, ArrowRight, AlertCircle, Download } from 'lucide-react';
 import { validateStudentToken } from '../../utils/tokenRotationManager';
-import { localExamStore } from '../../lib/supabase';
+import { localExamStore, getStudentByNisn, isSupabaseConfigured } from '../../lib/supabase';
 
 import StudentAttendanceModal from './StudentAttendanceModal';
 
@@ -25,7 +25,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
   // Selected Exam
   const chosenExam = currentExamOptions.find(e => e.id === selectedExamId) || currentExamOptions[0] || activeExam;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -39,11 +39,34 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
       return;
     }
 
+    // Validasi NISN terhadap daftar siswa terdaftar (jika Supabase aktif)
+    const nisnValue = (nisn || '').trim();
+    if (isSupabaseConfigured) {
+      if (!nisnValue) {
+        setErrorMsg('NISN wajib diisi untuk verifikasi kehadiran');
+        return;
+      }
+      const registered = await getStudentByNisn(nisnValue);
+      if (!registered) {
+        setErrorMsg('NISN tidak terdaftar sebagai peserta ujian. Hubungi pengawas/panitia.');
+        return;
+      }
+      // Cocokkan nama & ruang dengan data terdaftar (informasi, bukan hard-block)
+      if (studentName.trim().toLowerCase() !== registered.name.toLowerCase()) {
+        setErrorMsg(`Nama tidak sesuai dengan data terdaftar (${registered.name}). Periksa kembali.`);
+        return;
+      }
+      if (selectedRoom !== registered.room) {
+        setErrorMsg(`Ruang yang dipilih tidak sesuai. Anda terdaftar di ${registered.room}.`);
+        return;
+      }
+    }
+
     const isValid = validateStudentToken(inputToken, activeTokenObj, localExamStore.getPreviousToken());
     if (isValid) {
       setValidatedInfo({
         name: studentName,
-        nisn: nisn || '0080000000',
+        nisn: nisnValue || '0080000000',
         class: studentClass,
         room: selectedRoom,
         tokenEntered: inputToken.toUpperCase(),
@@ -152,10 +175,11 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5">
-                NISN / No. Ujian
+                NISN / No. Ujian {isSupabaseConfigured ? '*' : ''}
               </label>
               <input
                 type="text"
+                required={isSupabaseConfigured}
                 value={nisn}
                 onChange={(e) => setNisn(e.target.value)}
                 placeholder="NISN siswa"

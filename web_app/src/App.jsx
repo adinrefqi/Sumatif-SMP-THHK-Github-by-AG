@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import PdfUploader from './components/admin/PdfUploader';
 import ProctorTokenMonitor from './components/admin/ProctorTokenMonitor';
+import StudentManager from './components/admin/StudentManager';
 
 import StudentTokenScreen from './components/viewer/StudentTokenScreen';
 import MobilePdfViewer from './components/viewer/MobilePdfViewer';
@@ -286,14 +287,17 @@ export default function App() {
 
                 {/* SUPER ADMIN COMPONENT (Upload PDF / GDrive / Batch & Master Switch) */}
                 {isAdminRole && (
-                  <PdfUploader
-                    onExamCreated={handleExamCreated}
-                    isTokenAccessEnabled={isTokenAccessEnabled}
-                    onToggleTokenAccess={handleToggleTokenAccess}
-                    activeExamIds={activeExamIds}
-                    onToggleActiveExamId={handleToggleActiveExamId}
-                    activeExams={activeExams}
-                  />
+                  <>
+                    <StudentManager />
+                    <PdfUploader
+                      onExamCreated={handleExamCreated}
+                      isTokenAccessEnabled={isTokenAccessEnabled}
+                      onToggleTokenAccess={handleToggleTokenAccess}
+                      activeExamIds={activeExamIds}
+                      onToggleActiveExamId={handleToggleActiveExamId}
+                      activeExams={activeExams}
+                    />
+                  </>
                 )}
 
                 {/* PROCTOR & MONITOR COMPONENT */}

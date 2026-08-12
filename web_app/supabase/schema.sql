@@ -74,6 +74,30 @@ create policy "anon_select_student_logs" on public.student_logs
 create policy "anon_update_student_logs" on public.student_logs
   for update to anon using (true) with check (true);
 
+-- 4. students: daftar siswa terdaftar yang boleh mengikuti ujian
+create table if not exists public.students (
+  nisn text primary key,
+  name text not null,
+  class text not null,       -- contoh: 8A, 9B
+  room text not null,        -- Ruang 1 | Ruang 2 | Ruang 3
+  created_at timestamptz not null default now()
+);
+
+alter table public.students enable row level security;
+
+-- anon: bisa insert (upload daftar), select (validasi login), update (koreksi data)
+create policy "anon_insert_students" on public.students
+  for insert to anon with check (true);
+
+create policy "anon_select_students" on public.students
+  for select to anon using (true);
+
+create policy "anon_update_students" on public.students
+  for update to anon using (true) with check (true);
+
+create policy "anon_delete_students" on public.students
+  for delete to anon using (true);
+
 -- ============================================================
 -- Catatan tambahan:
 -- 1. Bucket Storage 'exam-pdfs' TIDAK diperlukan lagi — upload

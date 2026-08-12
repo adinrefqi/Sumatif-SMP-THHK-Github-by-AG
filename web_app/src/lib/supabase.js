@@ -19,6 +19,7 @@ const LOCAL_STORAGE_TOKEN_ACCESS_KEY = 'thhk_token_access_enabled';
 const LOCAL_STORAGE_ACTIVE_SESSION_KEY = 'thhk_active_session';
 const LOCAL_STORAGE_VIOLATION_LOG_KEY = 'thhk_violation_log';
 const LOCAL_STORAGE_LAST_HEARTBEAT_KEY = 'thhk_last_heartbeat';
+const LOCAL_STORAGE_STUDENTS_KEY = 'thhk_students_cache';
 
 export const localExamStore = {
   getExams: () => {
@@ -291,6 +292,22 @@ export const localExamStore = {
     } catch (err) {
       console.error("Failed to sync last_seen to Supabase", err);
     }
+  },
+  // Students cache (localStorage fallback)
+  getStudentsCache: () => {
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_STUDENTS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+  setStudentsCache: (students) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_STUDENTS_KEY, JSON.stringify(students));
+    } catch (e) {
+      console.error("Failed to cache students", e);
+    }
   }
 };
 
@@ -330,5 +347,114 @@ export const fetchLiveSessions = async () => {
   } catch (err) {
     console.error("Failed to fetch live sessions", err);
     return [];
+  }
+};
+
+// ---- Student roster (Supabase) ----
+
+// Fetch full student roster, cache to localStorage
+export const fetchStudents = async () => {
+  if (!isSupabaseConfigured) return localExamStore.getStudentsCache();
+  try {
+    const { data, error } = await supabase
+      .from('students')
+      .select('nisn, name, class, room')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    const list = data || [];
+    localExamStore.setStudentsCache(list);
+    return list;
+  } catch (err) {
+    console.error("Failed to fetch students", err);
+    return localExamStore.getStudentsCache();
+  }
+};
+
+// Look up a single student by NISN (for login validation)
+export const getStudentByNisn = async (nisn) => {
+  if (!isSupabaseConfigured) {
+    const cached = localExamStore.getStudentsCache();
+    return cached.find(s => s.nisn === nisn) || null;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('students')
+      .select('nisn, name, class, room')
+      .eq('nisn', nisn)
+      .limit(1);
+    if (error) throw error;
+    return (data && data[0]) || null;
+  } catch (err) {
+    console.error("Failed to get student", err);
+    const cached = localExamStore.getStudentsCache();
+    return cached.find(s => s.nisn === nisn) || null;
+  }
+};
+
+// Add a single student (upsert on nisn)
+export const addStudent = async (student) => {
+  if (!isSupabaseConfigured) {
+    const cache = localExamStore.getStudentsCache();
+    const filtered = cache.filter(s => s.nisn !== student.nisn);
+    localExamStore.setStudentsCache([...filtered, student]);
+    return true;
+  }
+  try {
+    const { error } = await supabase
+      .from('students')
+      .upsert([student], { onConflict: 'nisn' });
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Failed to add student", err);
+    return false;
+  }
+};
+
+// Add many students at once (CSV import), skipping duplicates
+export const bulkAddStudents = async (students) => {
+  if (!isSupabaseConfigured) {
+    const cache = localExamStore.getStudentsCache();
+    const seen = new Set(cache.map(s => s.nisn));
+    const merged = [...cache];
+    students.forEach(s => {
+      if (!seen.has(s.nisn)) {
+        merged.push(s);
+        seen.add(s.nisn);
+      }
+    });
+    localExamStore.setStudentsCache(merged);
+    return { added: students.length };
+  }
+  try {
+    // Upsert all; Supabase handles duplicates via primary key (nisn)
+    const { error } = await supabase
+      .from('students')
+      .upsert(students, { onConflict: 'nisn' });
+    if (error) throw error;
+    return { added: students.length };
+  } catch (err) {
+    console.error("Failed to bulk add students", err);
+    return { added: 0, error: err.message };
+  }
+};
+
+// Delete a student by nisn
+export const deleteStudent = async (nisn) => {
+  if (!isSupabaseConfigured) {
+    const cache = localExamStore.getStudentsCache();
+    localExamStore.setStudentsCache(cache.filter(s => s.nisn !== nisn));
+    return true;
+  }
+  try {
+    const { error } = await supabase
+      .from('students')
+      .delete()
+      .eq('nisn', nisn);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Failed to delete student", err);
+    return false;
   }
 };
