@@ -46,7 +46,7 @@ class _ExitPasswordDialogState extends State<ExitPasswordDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Masukkan password keamanan untuk keluar dari mode ujian (Default: 12345):',
+            'Masukkan password keamanan untuk keluar dari mode ujian:',
             style: TextStyle(fontSize: 12, color: Colors.black87),
           ),
           const SizedBox(height: 12),

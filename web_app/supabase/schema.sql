@@ -1,6 +1,14 @@
 -- ============================================================
--- SMP THHK Sumatif Exam Portal — Supabase Schema Migration
+-- SMP THHK Sumatif Exam Portal — Supabase Schema
 -- Jalankan di: Supabase Dashboard → SQL Editor → New query
+--
+-- File ini mencerminkan kondisi akhir setelah FASE 0 (Emergency
+-- Lockdown). Untuk database yang sudah berjalan, jalankan
+-- migrations/000_emergency_lockdown.sql — bukan file ini.
+--
+-- Prinsip RLS setelah Fase 0: anon key ada di bundle JS publik,
+-- jadi anggap SIAPA PUN memegangnya. Yang boleh anon lakukan
+-- dipersempit ke minimum yang membuat aplikasi tetap jalan.
 -- ============================================================
 
 -- 1. exam_sessions: daftar ujian yang diterbitkan admin
@@ -23,14 +31,9 @@ create table if not exists public.exam_sessions (
 
 alter table public.exam_sessions enable row level security;
 
-create policy "anon_insert_exam_sessions" on public.exam_sessions
-  for insert to anon with check (true);
-
-create policy "anon_select_exam_sessions" on public.exam_sessions
-  for select to anon using (true);
-
-create policy "anon_update_exam_sessions" on public.exam_sessions
-  for update to anon using (true) with check (true);
+-- TANPA POLICY ANON. Tabel ini memuat pdf_url (link naskah soal);
+-- select anon berarti naskah bisa diambil siapa pun sebelum ujian.
+-- Akses dipulihkan di Fase 1 lewat RPC security definer.
 
 -- 2. violation_logs: catatan pelanggaran integritas ujian
 create table if not exists public.violation_logs (
@@ -44,69 +47,33 @@ create table if not exists public.violation_logs (
 
 alter table public.violation_logs enable row level security;
 
--- anon hanya boleh insert & select (untuk proctor dashboard);
--- tidak boleh update/delete sembarangan
+-- Insert-only: siswa perlu bisa melapor, tapi tidak boleh membaca
+-- laporan siswa lain (bocor = ketahuan deteksi apa yang aktif).
 create policy "anon_insert_violation_logs" on public.violation_logs
   for insert to anon with check (true);
 
-create policy "anon_select_violation_logs" on public.violation_logs
-  for select to anon using (true);
-
--- 3. student_logs: status siswa per ujian (Desain.md)
-create table if not exists public.student_logs (
-  id uuid primary key default gen_random_uuid(),
-  exam_id text,
-  student_name text,
-  nisn text unique, -- unik per siswa, untuk upsert help request
-  status text not null default 'ACTIVE', -- ACTIVE | HELP_NEEDED | DISCONNECTED
-  violations_count integer not null default 0,
-  last_active_at timestamptz not null default now()
-);
-
-alter table public.student_logs enable row level security;
-
-create policy "anon_insert_student_logs" on public.student_logs
-  for insert to anon with check (true);
-
-create policy "anon_select_student_logs" on public.student_logs
-  for select to anon using (true);
-
-create policy "anon_update_student_logs" on public.student_logs
-  for update to anon using (true) with check (true);
-
--- 4. students: daftar siswa terdaftar yang boleh mengikuti ujian
+-- 3. students: daftar siswa terdaftar yang boleh mengikuti ujian
 create table if not exists public.students (
   nisn text primary key,
   name text not null,
-  class text not null,       -- contoh: 8A, 9B
+  class text not null,       -- tingkat kelas saja: 7 | 8 | 9
   room text not null,        -- Ruang 1 | Ruang 2 | Ruang 3
   created_at timestamptz not null default now()
 );
 
 alter table public.students enable row level security;
 
--- anon: bisa insert (upload daftar), select (validasi login), update (koreksi data)
-create policy "anon_insert_students" on public.students
-  for insert to anon with check (true);
-
+-- Select-only, dan HANYA sementara: login siswa masih memvalidasi
+-- NISN di klien. Dicabut di Fase 1 setelah validasi pindah ke RPC.
 create policy "anon_select_students" on public.students
   for select to anon using (true);
 
-create policy "anon_update_students" on public.students
-  for update to anon using (true) with check (true);
-
-create policy "anon_delete_students" on public.students
-  for delete to anon using (true);
-
 -- ============================================================
--- Catatan tambahan:
--- 1. Bucket Storage 'exam-pdfs' TIDAK diperlukan lagi — upload
---    file PDF sudah dihapus; naskah soal hanya via Link Google Drive.
--- 2. Anon key didesain untuk frontend (publik). RLS di atas
---    membatasi agar anon hanya insert/select; update hanya
---    diizinkan di exam_sessions (untuk heartbeat last_seen_at).
--- 3. Jika tabel exam_sessions PERNAH dibuat sebelumnya dengan
---    id bertipe uuid (bukan text), jalankan dulu:
---      drop table if exists public.exam_sessions cascade;
---    lalu jalankan ulang skrip ini. (Kode web mengirim id string.)
+-- Catatan:
+-- 1. Bucket Storage 'exam-pdfs' tidak diperlukan — naskah soal
+--    hanya via Link Google Drive.
+-- 2. Tabel student_logs sudah dihapus (tidak dirujuk kode mana pun).
+-- 3. Yang rusak setelah Fase 0 (disengaja, dipulihkan di Fase 1):
+--    tambah/hapus siswa di StudentManager, publikasi soal baru dari
+--    PdfUploader, tab Monitoring Integritas, dan sinkronisasi last_seen.
 -- ============================================================

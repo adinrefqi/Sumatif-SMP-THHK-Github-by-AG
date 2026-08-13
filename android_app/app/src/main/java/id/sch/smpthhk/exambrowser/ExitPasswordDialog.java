@@ -17,7 +17,7 @@ public class ExitPasswordDialog {
     public static void show(Context context, OnPasswordValidatedListener listener) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Password Keamanan Exambrowser");
-        builder.setMessage("Masukkan password keamanan untuk keluar dari mode ujian (Default: 12345):");
+        builder.setMessage("Masukkan password keamanan untuk keluar dari mode ujian:");
 
         final EditText input = new EditText(context);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);

@@ -120,7 +120,7 @@ export default function App() {
     } else if (window.ExambrowserBridge && window.ExambrowserBridge.showExitPasswordDialog) {
       window.ExambrowserBridge.showExitPasswordDialog();
     } else {
-      const pin = window.prompt('Masukkan Password Admin Keamanan untuk Keluar (Default: 12345):');
+      const pin = window.prompt('Masukkan Password Admin Keamanan untuk Keluar:');
       if (pin === '12345' || pin === 'THHK2026') {
         alert('Password Benar. Keluar dari Aplikasi Exambrowser.');
         localExamStore.clearActiveSession();
@@ -151,7 +151,7 @@ export default function App() {
       setActiveProctorRoom(proctorRoomInput);
       setAdminAuthPin('');
     } else {
-      alert('PIN Salah! Masukkan PIN Proktor (12345) atau PIN Super Admin (THHK2026)');
+      alert('PIN Salah!');
     }
   };
 
@@ -208,7 +208,7 @@ export default function App() {
                       Otorisasi Panel Proktor & Super Admin
                     </h3>
                     <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
-                      SMP THHK TEGAL • PIN Proktor Ruangan (<strong>12345</strong>) atau PIN Super Admin (<strong>THHK2026</strong>)
+                      SMP THHK TEGAL • Masukkan PIN Proktor Ruangan atau PIN Super Admin
                     </p>
                   </div>
 

@@ -32,13 +32,13 @@ Sistem ini menerapkan **Metode Hibrida**:
 - Menjawab pada Lembar Jawab Kertas (LJK).
 
 ### B. Proktor / Pengawas Ruangan
-- Memasukkan PIN Ruang (`12345`) & Wajib Mengisi Form Berita Acara Ujian saat awal login.
+- Memasukkan PIN Ruang (dikonfigurasi terpisah, tidak disimpan di repo) & Wajib Mengisi Form Berita Acara Ujian saat awal login.
 - Memantau & merilis Token 15-menit (jika telah dibuka oleh Super Admin).
 - Memantau presensi real-time dan melihat rekap Tanda Tangan Digital siswa.
 - Melakukan *Emergency Session Reset* jika HP siswa bermasalah.
 
 ### C. Super Admin (Panitia Ujian)
-- Memasukkan PIN Super Admin (`THHK2026`).
+- Memasukkan PIN Super Admin (dikonfigurasi terpisah, tidak disimpan di repo).
 - Mengunggah file PDF naskah soal lokal atau menginput Link Google Drive PDF.
 - Mengontrol Master Switch "Buka/Kunci Akses Rilis Token" untuk Proktor Ruangan.
 
@@ -52,7 +52,7 @@ Sistem ini menerapkan **Metode Hibrida**:
 3. **FLAG_SECURE Enforcement:** Memblokir screenshot dan perekaman layar 100%.
 4. **Sirine Alarm 95% Volume:** Otomatis membunyikan suara alarm peringatan keras jika siswa berupaya meminimalkan aplikasi atau pindah aplikasi lain.
 5. **Anti-Floating Apps & Overlay Detector:** Mendeteksi dan memblokir aplikasi mengambang di Android (`Settings.canDrawOverlays`).
-6. **Password Exit Protection:** Memerlukan password keamanan `12345` untuk keluar dari mode ujian atau mematikan aplikasi.
+6. **Password Exit Protection:** Memerlukan password keamanan (dikonfigurasi terpisah) untuk keluar dari mode ujian atau mematikan aplikasi.
 7. **Anti Copy-Paste & Clipboard Lock:** Menutup akses copy-paste dan clipboard sistem.
 8. **Deteksi Bluetooth & Headset:** Mendeteksi status earphone/headset audio terhubung.
 9. **Indikator Baterai & Jam Realtime:** Mengirim status daya baterai dan jam tersinkronisasi ke Webview.
@@ -78,4 +78,4 @@ Sistem ini menerapkan **Metode Hibrida**:
 - **Deployment Web:** Vercel Hosting (Auto CI/CD via GitHub Repository).
 - **Cloud Infrastructure:** Supabase PostgreSQL Database & Supabase Storage (Bucket PDF Soal).
 - **Package Name Android:** `id.sch.smpthhk.exambrowser`.
-- **Default Exit Password:** `12345`.
+- **Exit Password & PIN Panel:** dikonfigurasi terpisah di luar repo (GitHub Secret / database). Nilai literal tidak boleh masuk ke repo maupun teks UI.

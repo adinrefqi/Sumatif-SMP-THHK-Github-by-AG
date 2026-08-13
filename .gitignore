@@ -31,6 +31,12 @@ flutter_app/android/local.properties
 flutter_app/build/
 flutter_app/.dart_tool/
 
+# Signing secrets — JANGAN PERNAH di-commit.
+# Keystore rilis disuntikkan CI dari GitHub Secrets saat build.
+*.jks
+*.keystore
+key.properties
+
 # IDE / System
 .DS_Store
 Thumbs.db
