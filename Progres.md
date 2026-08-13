@@ -3,7 +3,13 @@
 
 ---
 
-## Status Progres Proyek: 100% SELESAI & AUTO-BUILD GITHUB READY
+## Status Progres Proyek: Fitur lengkap — pengerasan keamanan berjalan (Fase 0 dari 3 selesai)
+
+> Audit keamanan menemukan bahwa semua gerbang (PIN, token, daftar soal, presensi)
+> masih diputuskan di klien. Perbaikannya dikerjakan bertahap dalam 3 fase; lihat
+> `~/.claude/plans/buatkan-plannya-karena-akan-wobbly-breeze.md`.
+> **Fase 1 (server jadi otoritas) belum dikerjakan** — sampai itu selesai, portal
+> belum layak dipakai untuk ujian sungguhan.
 
 | Modul | Status | Keterangan |
 |---|---|---|
@@ -17,6 +23,16 @@
 ---
 
 ## Log Aktivitas Terbaru
+
+- **Fase 0 — Emergency Lockdown (13 Agustus 2026):**
+  - `web_app/supabase/migrations/000_emergency_lockdown.sql`: mencabut policy anon yang
+    membocorkan `pdf_url` dan mengizinkan hapus/ubah massal roster siswa, menghapus tabel
+    `student_logs` yang tidak terpakai, dan membersihkan baris heartbeat dari bank soal.
+  - Menghapus semua nilai PIN/password literal dari teks UI dan dokumen proyek.
+  - Keystore rilis & `key.properties` (4 file) dikeluarkan dari repo; CI kini menyuntiknya
+    dari GitHub Secrets dan gagal keras kalau secret kosong (mencegah APK debug-signed).
+  - **Menunggu tindakan manual:** repo dijadikan privat, SQL dijalankan di Supabase,
+    keystore dirotasi + 4 GitHub Secret diisi.
 
   - Menambahkan konfigurasi **Signed Release APK Android**: Keystore (`upload-keystore.jks`) & `key.properties` resmi SMP THHK Tegal.
   - Menambahkan publikasi otomatis **GitHub Release v1.0.0** untuk mengunduh `.apk` resmi yang telah ditandatangani digital (*Signed Official Release*).
