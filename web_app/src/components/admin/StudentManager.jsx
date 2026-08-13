@@ -3,12 +3,12 @@ import {
   Users, UploadCloud, Plus, Trash2, Search, Download,
   CheckCircle2, AlertCircle, FileText
 } from 'lucide-react';
-import { isSupabaseConfigured, fetchStudents, addStudent, bulkAddStudents, deleteStudent } from '../../lib/supabase';
+import { adminListStudents, adminAddStudent, adminBulkAddStudents, adminDeleteStudent } from '../../lib/supabase';
 
 const ROOMS = ['Ruang 1', 'Ruang 2', 'Ruang 3'];
 const CLASSES = ['7', '8', '9'];
 
-export default function StudentManager() {
+export default function StudentManager({ adminPin }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
@@ -25,14 +25,20 @@ export default function StudentManager() {
 
   const loadStudents = async () => {
     setLoading(true);
-    const list = await fetchStudents();
-    setStudents(list);
+    try {
+      const list = await adminListStudents(adminPin);
+      setStudents(Array.isArray(list) ? list : []);
+    } catch (err) {
+      setMessage({ type: 'error', text: `Gagal memuat daftar siswa: ${err.message || 'Terjadi kesalahan'}` });
+      setStudents([]);
+    }
     setLoading(false);
   };
 
   useEffect(() => {
     loadStudents();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminPin]);
 
   // ---- CSV parsing ----
   const parseCsv = (text) => {
@@ -64,10 +70,10 @@ export default function StudentManager() {
         setMessage({ type: 'error', text: 'CSV kosong atau format salah. Gunakan kolom: nisn, name, class, room' });
         return;
       }
-      const result = await bulkAddStudents(rows);
+      await adminBulkAddStudents(adminPin, rows);
       setMessage({
         type: 'success',
-        text: `Berhasil mengimpor ${rows.length} siswa dari CSV.${result.error ? ' (sebagian gagal)' : ''}`
+        text: `Berhasil mengimpor ${rows.length} siswa dari CSV.`
       });
       await loadStudents();
     } catch (err) {
@@ -93,25 +99,25 @@ export default function StudentManager() {
       setMessage({ type: 'error', text: 'NISN dan Nama wajib diisi' });
       return;
     }
-    const ok = await addStudent({ nisn: nisn.trim(), name: name.trim(), class: classVal, room: roomVal });
-    if (ok) {
+    try {
+      await adminAddStudent(adminPin, { nisn: nisn.trim(), name: name.trim(), class: classVal, room: roomVal });
       setMessage({ type: 'success', text: `Siswa ${name.trim()} berhasil ditambahkan.` });
       setNisn('');
       setName('');
       await loadStudents();
-    } else {
-      setMessage({ type: 'error', text: 'Gagal menambahkan siswa. Cek koneksi/izin Supabase.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: `Gagal menambahkan siswa: ${err.message || 'Terjadi kesalahan'}` });
     }
   };
 
   const handleDelete = async (nisnToDelete, studentName) => {
     if (!window.confirm(`Hapus siswa ${studentName} (NISN ${nisnToDelete})?`)) return;
-    const ok = await deleteStudent(nisnToDelete);
-    if (ok) {
+    try {
+      await adminDeleteStudent(adminPin, nisnToDelete);
       setMessage({ type: 'success', text: `Siswa ${studentName} dihapus.` });
       await loadStudents();
-    } else {
-      setMessage({ type: 'error', text: 'Gagal menghapus siswa.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: `Gagal menghapus siswa: ${err.message || 'Terjadi kesalahan'}` });
     }
   };
 
@@ -139,11 +145,6 @@ export default function StudentManager() {
             </p>
           </div>
         </div>
-        {!isSupabaseConfigured && (
-          <span className="px-2.5 py-1 bg-bad/10 text-bad border border-bad/30 rounded-md text-[10px] font-bold uppercase">
-            Mode Lokal (Supabase belum aktif)
-          </span>
-        )}
       </div>
 
       {message && (

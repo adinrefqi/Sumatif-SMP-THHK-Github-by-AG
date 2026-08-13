@@ -1,73 +1,87 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle, FileSignature, ClipboardList, Lock, Edit3, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
-import { generateToken, getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
-import { localExamStore, isSupabaseConfigured, fetchViolations, fetchLiveSessions } from '../../lib/supabase';
+import { getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
+import { releaseToken, currentToken, proctorDashboard, saveMinutes, isSupabaseConfigured } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
 
-export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, activeExam, activeExams = [], isTokenAccessEnabled, isAdminRole, proctorRoom = 'Ruang 1' }) {
+export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom = 'Ruang 1' }) {
   const [activeTab, setActiveTab] = useState('token'); // 'token' | 'attendance' | 'minutes' | 'monitor'
-  const [officialMinutes, setOfficialMinutes] = useState(localExamStore.getOfficialMinutes(proctorRoom));
-  const [showMinutesForm, setShowMinutesForm] = useState(!localExamStore.getOfficialMinutes(proctorRoom) && !isAdminRole);
-  const [attendanceList, setAttendanceList] = useState(localExamStore.getAttendanceRecords());
+  const [officialMinutes, setOfficialMinutes] = useState(null);
+  const [showMinutesForm, setShowMinutesForm] = useState(!isAdminRole);
+  const [attendanceList, setAttendanceList] = useState([]);
   const [violations, setViolations] = useState([]);
   const [liveSessions, setLiveSessions] = useState([]);
 
   const filteredAttendance = proctorRoom ? attendanceList.filter(r => r.room === proctorRoom) : attendanceList;
 
-  const [timeInfo, setTimeInfo] = useState(getTimeRemainingInTokenCycle(activeTokenObj?.timestamp));
-  const hasExpiredRef = useRef(false);
+  const [tokenInfo, setTokenInfo] = useState(null); // { token, created_at }
+  const [timeInfo, setTimeInfo] = useState(getTimeRemainingInTokenCycle(null));
+  const [tokenError, setTokenError] = useState('');
+  const [isTokenAccessEnabled, setIsTokenAccessEnabled] = useState(true);
+  const [isReleasing, setIsReleasing] = useState(false);
 
-  // Poll for attendance list updates
+  // Load dashboard on mount & room change
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAttendanceList(localExamStore.getAttendanceRecords());
-      setOfficialMinutes(localExamStore.getOfficialMinutes(proctorRoom));
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [proctorRoom]);
+    if (!adminPin) return;
+    let cancelled = false;
 
-  // Poll Supabase for cross-device violations & live sessions
-  useEffect(() => {
-    if (!isSupabaseConfigured) return;
-
-    const poll = () => {
-      fetchViolations().then(setViolations);
-      fetchLiveSessions().then(setLiveSessions);
+    const load = async () => {
+      try {
+        const [dash, tok] = await Promise.all([
+          proctorDashboard({ pin: adminPin, room: proctorRoom }),
+          currentToken({ pin: adminPin, room: proctorRoom }),
+        ]);
+        if (cancelled) return;
+        if (dash) {
+          setAttendanceList(dash.attendance || []);
+          setViolations(dash.violations || []);
+          setLiveSessions(dash.sessions || []);
+          setOfficialMinutes(dash.minutes && dash.minutes !== null ? dash.minutes : null);
+        }
+        if (tok) {
+          setTokenInfo(tok);
+          if (tok.created_at) {
+            setTimeInfo(getTimeRemainingInTokenCycle(new Date(tok.created_at).getTime()));
+          } else {
+            setTimeInfo(getTimeRemainingInTokenCycle(null));
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setTokenError(`Gagal memuat dashboard: ${err.message || 'Terjadi kesalahan'}`);
+      }
     };
-    poll();
-    const interval = setInterval(poll, 10000);
-    return () => clearInterval(interval);
-  }, []);
+
+    load();
+    const interval = setInterval(load, 10000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [adminPin, proctorRoom]);
 
   // Interval timer for 15-min countdown
   useEffect(() => {
-    if (!activeTokenObj?.timestamp) {
+    if (!tokenInfo?.created_at) {
       setTimeInfo({ minutes: 15, seconds: 0, percentage: 100, isExpired: false });
-      hasExpiredRef.current = false;
       return undefined;
     }
 
     const timer = setInterval(() => {
-      const remaining = getTimeRemainingInTokenCycle(activeTokenObj?.timestamp);
-      setTimeInfo(remaining);
-
-      if (remaining.isExpired && !hasExpiredRef.current && isTokenAccessEnabled) {
-        hasExpiredRef.current = true;
-        handleManualRefresh();
-      }
+      setTimeInfo(getTimeRemainingInTokenCycle(new Date(tokenInfo.created_at).getTime()));
     }, 1000);
 
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTokenObj, isTokenAccessEnabled]);
+  }, [tokenInfo]);
 
-  const handleManualRefresh = () => {
-    if (!isTokenAccessEnabled && !isAdminRole) return;
-    const newTokenStr = generateToken();
-    const updatedObj = localExamStore.setActiveToken(newTokenStr);
-    hasExpiredRef.current = false;
-    if (onTokenUpdate) {
-      onTokenUpdate(updatedObj);
+  const handleManualRefresh = async () => {
+    if (isReleasing) return;
+    setIsReleasing(true);
+    setTokenError('');
+    try {
+      const res = await releaseToken({ pin: adminPin, room: proctorRoom });
+      setTokenInfo({ token: res.token, created_at: res.created_at });
+      setTimeInfo(getTimeRemainingInTokenCycle(new Date(res.created_at).getTime()));
+    } catch (err) {
+      setTokenError(err.message || 'Gagal merilis token');
+    } finally {
+      setIsReleasing(false);
     }
   };
 
@@ -80,8 +94,8 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
   if (showMinutesForm && !isAdminRole) {
     return (
       <OfficialMinutesForm
-        activeExam={activeExam}
         proctorRoom={proctorRoom}
+        adminPin={adminPin}
         onSubmitted={handleMinutesSubmitted}
       />
     );
@@ -114,7 +128,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
             }`}
           >
             <FileSignature className="w-4 h-4" />
-            <span>Daftar Hadir & TTD Siswa ({attendanceList.length})</span>
+            <span>Daftar Hadir & TTD Siswa ({filteredAttendance.length})</span>
           </button>
 
           <button
@@ -160,15 +174,10 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
       {/* TAB 1: TOKEN & LIVE SESSION MONITOR */}
       {activeTab === 'token' && (
         <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
-          
-          {/* Token Access Locked Banner */}
-          {!isTokenAccessEnabled && (
-            <div className="mb-5 p-3.5 bg-bad/10 border border-bad/30 rounded-xl text-bad text-xs font-semibold flex items-center gap-3">
-              <Lock className="w-5 h-5 shrink-0" />
-              <div>
-                <strong className="font-extrabold uppercase tracking-wider block">Akses Rilis Token Terkunci oleh Super Admin</strong>
-                <span>Rilis token ujian saat ini belum dibuka oleh Super Admin. Hubungi panitia ujian untuk membuka gerbang rilis token.</span>
-              </div>
+
+          {tokenError && (
+            <div className="mb-5 p-3.5 bg-bad/10 border border-bad/30 rounded-xl text-bad text-xs font-semibold">
+              {tokenError}
             </div>
           )}
 
@@ -192,7 +201,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
                 {/* Token Display */}
                 <div className="text-center py-5 bg-console-bg rounded-lg border border-console-line">
                   <span className="font-mono text-4xl md:text-5xl font-extrabold tracking-[0.2em] text-accent-soft select-all tabular-nums">
-                    {activeTokenObj?.token || 'THHK26'}
+                    {tokenInfo?.token || '••••••'}
                   </span>
                   <p className="text-[10px] text-ink-faint mt-2 font-semibold uppercase tracking-wider">
                     Umumkan token ini ke peserta ruang ujian
@@ -225,7 +234,7 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
                   className="w-full mt-4 py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-[11px] font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Rilis Token Baru</span>
+                  <span>{isReleasing ? 'Merilis...' : 'Rilis Token Baru'}</span>
                 </button>
               </div>
             </div>
@@ -266,10 +275,12 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
                     <tbody className="divide-y divide-console-line font-mono">
                       {attendanceList.map((item, idx) => (
                         <tr key={idx} className="hover:bg-console-faint/50">
-                          <td className="py-2 px-3 text-ink-faint">{item.timeFormatted || '08:00'}</td>
-                          <td className="py-2 px-3 font-bold text-ink-strong">{item.name}</td>
+                          <td className="py-2 px-3 text-ink-faint">
+                            {item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '08:00'}
+                          </td>
+                          <td className="py-2 px-3 font-bold text-ink-strong">{item.name || '-'}</td>
                           <td className="py-2 px-3 text-ink-muted">{item.nisn}</td>
-                          <td className="py-2 px-3 text-accent font-bold">{item.class}</td>
+                          <td className="py-2 px-3 text-accent font-bold">{item.class || '-'}</td>
                           <td className="py-2 px-3">
                             <span className="px-2 py-0.5 bg-ok/10 text-ok border border-ok/25 rounded-md text-[10px] font-bold">
                               HADIR & TTD
@@ -311,19 +322,21 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
                 <div key={idx} className="bg-console-raised border border-console-line rounded-xl p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-bold text-ink-strong truncate max-w-[130px]">{item.name}</span>
+                      <span className="font-bold text-ink-strong truncate max-w-[130px]">{item.name || item.nisn}</span>
                       <span className="px-1.5 py-0.5 bg-accent/10 text-accent font-mono font-bold text-[10px] rounded">
-                        {item.class}
+                        {item.class || '-'}
                       </span>
                     </div>
                     <p className="text-[10px] text-ink-faint font-mono">NISN: {item.nisn}</p>
-                    <p className="text-[10px] text-ink-faint font-mono mb-2">Masuk: {item.timeFormatted || '-'}</p>
+                    <p className="text-[10px] text-ink-faint font-mono mb-2">
+                      Masuk: {item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </p>
                   </div>
 
                   {/* Signature Thumbnail Preview */}
                   <div className="bg-console-bg border border-console-line rounded-lg h-24 p-1 flex items-center justify-center relative overflow-hidden">
-                    {item.signatureUrl ? (
-                      <img src={item.signatureUrl} alt={`TTD ${item.name}`} className="max-h-full max-w-full object-contain" />
+                    {item.signature ? (
+                      <img src={item.signature} alt={`TTD ${item.name || item.nisn}`} className="max-h-full max-w-full object-contain" />
                     ) : (
                       <span className="text-[10px] text-ink-faint italic">Tidak ada TTD</span>
                     )}
@@ -429,115 +442,103 @@ export default function ProctorTokenMonitor({ activeTokenObj, onTokenUpdate, act
             )}
           </div>
 
-          {!isSupabaseConfigured ? (
-            <div className="p-8 text-center border border-dashed border-console-line rounded-xl bg-console-bg/50">
-              <ShieldAlert className="w-8 h-8 text-ink-faint mx-auto mb-2 opacity-50" />
-              <p className="text-xs font-semibold text-ink-muted">
-                Konfigurasi Supabase belum aktif di build ini.
-              </p>
-              <p className="text-[11px] text-ink-faint mt-0.5">
-                Set env VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY di Vercel lalu redeploy.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Online/Offline sessions summary */}
-              <div>
-                <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Wifi className="w-3.5 h-3.5 text-ok" />
-                  <span>Status Sesi Siswa ({liveSessions.length} aktif)</span>
-                </h4>
-                {liveSessions.length === 0 ? (
-                  <p className="text-xs text-ink-muted italic py-3">Belum ada sesi aktif terdeteksi.</p>
-                ) : (
-                  <div className="overflow-x-auto border border-console-line rounded-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
-                          <th className="py-2.5 px-3">NISN / Siswa</th>
-                          <th className="py-2.5 px-3">Mapel</th>
-                          <th className="py-2.5 px-3">Terakhir Aktif</th>
-                          <th className="py-2.5 px-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-console-line">
-                        {liveSessions.map((s) => {
-                          const lastSeen = s.last_seen_at ? new Date(s.last_seen_at) : null;
-                          const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 2 * 60 * 1000;
-                          return (
-                            <tr key={s.id} className="hover:bg-console-faint/50">
-                              <td className="py-2 px-3 font-bold text-ink-strong">{s.id}</td>
-                              <td className="py-2 px-3 text-accent font-semibold">{s.subject || '-'}</td>
-                              <td className="py-2 px-3 text-ink-faint font-mono">
-                                {lastSeen ? lastSeen.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
-                              </td>
-                              <td className="py-2 px-3">
-                                {isOnline ? (
-                                  <span className="px-2 py-0.5 bg-ok/10 text-ok border border-ok/25 rounded-md text-[10px] font-bold flex items-center gap-1 w-fit">
-                                    <Wifi className="w-3 h-3" />
-                                    ONLINE
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 bg-bad/10 text-bad border border-bad/25 rounded-md text-[10px] font-bold flex items-center gap-1 w-fit">
-                                    <WifiOff className="w-3 h-3" />
-                                    OFFLINE
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Violations list */}
-              <div>
-                <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-bad" />
-                  <span>Catatan Pelanggaran Terdeteksi ({violations.length})</span>
-                </h4>
-                {violations.length === 0 ? (
-                  <p className="text-xs text-ok italic py-3">Tidak ada pelanggaran terdeteksi. Semua siswa fokus mengerjakan ujian. 👍</p>
-                ) : (
-                  <div className="overflow-x-auto border border-console-line rounded-xl">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
-                          <th className="py-2.5 px-3">Waktu</th>
-                          <th className="py-2.5 px-3">NISN / Sesi</th>
-                          <th className="py-2.5 px-3">Jenis Pelanggaran</th>
-                          <th className="py-2.5 px-3">Detail</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-console-line">
-                        {violations.map((v) => {
-                          const t = v.created_at ? new Date(v.created_at) : null;
-                          const typeLabel = (v.type || 'unknown').replace(/_/g, ' ');
-                          return (
-                            <tr key={v.id} className="hover:bg-console-faint/50">
-                              <td className="py-2 px-3 text-ink-faint font-mono whitespace-nowrap">
-                                {t ? t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
-                              </td>
-                              <td className="py-2 px-3 font-mono text-ink-muted">{v.student_id || v.session_id || '-'}</td>
-                              <td className="py-2 px-3">
-                                <span className="px-2 py-0.5 bg-bad/10 text-bad border border-bad/25 rounded-md text-[10px] font-bold uppercase">
-                                  {typeLabel}
+          <div className="space-y-6">
+            {/* Online/Offline sessions summary */}
+            <div>
+              <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Wifi className="w-3.5 h-3.5 text-ok" />
+                <span>Status Sesi Siswa ({liveSessions.length} aktif)</span>
+              </h4>
+              {liveSessions.length === 0 ? (
+                <p className="text-xs text-ink-muted italic py-3">Belum ada sesi aktif terdeteksi.</p>
+              ) : (
+                <div className="overflow-x-auto border border-console-line rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
+                        <th className="py-2.5 px-3">NISN / Siswa</th>
+                        <th className="py-2.5 px-3">Mapel</th>
+                        <th className="py-2.5 px-3">Terakhir Aktif</th>
+                        <th className="py-2.5 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-console-line">
+                      {liveSessions.map((s) => {
+                        const lastSeen = s.last_seen_at ? new Date(s.last_seen_at) : null;
+                        const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 2 * 60 * 1000;
+                        return (
+                          <tr key={s.id} className="hover:bg-console-faint/50">
+                            <td className="py-2 px-3 font-bold text-ink-strong">{s.nisn}</td>
+                            <td className="py-2 px-3 text-accent font-semibold">{s.exam_id || '-'}</td>
+                            <td className="py-2 px-3 text-ink-faint font-mono">
+                              {lastSeen ? lastSeen.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                            </td>
+                            <td className="py-2 px-3">
+                              {isOnline ? (
+                                <span className="px-2 py-0.5 bg-ok/10 text-ok border border-ok/25 rounded-md text-[10px] font-bold flex items-center gap-1 w-fit">
+                                  <Wifi className="w-3 h-3" />
+                                  ONLINE
                                 </span>
-                              </td>
-                              <td className="py-2 px-3 text-ink-muted">{v.detail || '-'}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-bad/10 text-bad border border-bad/25 rounded-md text-[10px] font-bold flex items-center gap-1 w-fit">
+                                  <WifiOff className="w-3 h-3" />
+                                  OFFLINE
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Violations list */}
+            <div>
+              <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-bad" />
+                <span>Catatan Pelanggaran Terdeteksi ({violations.length})</span>
+              </h4>
+              {violations.length === 0 ? (
+                <p className="text-xs text-ok italic py-3">Tidak ada pelanggaran terdeteksi. Semua siswa fokus mengerjakan ujian. 👍</p>
+              ) : (
+                <div className="overflow-x-auto border border-console-line rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
+                        <th className="py-2.5 px-3">Waktu</th>
+                        <th className="py-2.5 px-3">NISN / Sesi</th>
+                        <th className="py-2.5 px-3">Jenis Pelanggaran</th>
+                        <th className="py-2.5 px-3">Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-console-line">
+                      {violations.map((v) => {
+                        const t = v.created_at ? new Date(v.created_at) : null;
+                        const typeLabel = (v.type || 'unknown').replace(/_/g, ' ');
+                        return (
+                          <tr key={v.id} className="hover:bg-console-faint/50">
+                            <td className="py-2 px-3 text-ink-faint font-mono whitespace-nowrap">
+                              {t ? t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                            </td>
+                            <td className="py-2 px-3 font-mono text-ink-muted">{v.student_id || v.session_id || '-'}</td>
+                            <td className="py-2 px-3">
+                              <span className="px-2 py-0.5 bg-bad/10 text-bad border border-bad/25 rounded-md text-[10px] font-bold uppercase">
+                                {typeLabel}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-ink-muted">{v.detail || '-'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

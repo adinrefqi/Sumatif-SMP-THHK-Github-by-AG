@@ -282,7 +282,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             </div>
 
             <div className="mt-6 text-center text-[10px] text-ink-faint font-semibold uppercase tracking-label border-t border-console-line pt-3">
-              Silakan unggah file PDF asli melalui Panel Admin Proktor
+              Silakan input Link Google Drive naskah soal melalui Panel Admin Proktor
             </div>
           </div>
         ) : (

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Battery, User } from 'lucide-react';
-import { localExamStore } from '../../lib/supabase';
+import { heartbeat, getActiveSession } from '../../lib/supabase';
 
 export default function ExamTimerHeader({ studentInfo, activeExam }) {
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState((activeExam?.duration_minutes || 90) * 60);
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState((studentInfo?.exam?.duration_minutes || activeExam?.duration_minutes || 90) * 60);
   const [realtimeClock, setRealtimeClock] = useState('');
   const [batteryLevel, setBatteryLevel] = useState(85);
   const lastHeartbeatRef = useRef(0);
@@ -25,15 +25,20 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
     }
   }, []);
 
-  // Countdown Exam Timer & Realtime Clock + Heartbeat
+  // Countdown Exam Timer & Realtime Clock + Heartbeat (server)
   useEffect(() => {
-    const HEARTBEAT_INTERVAL_MS = 30000; // local heartbeat every 30s (battery friendly)
-    const REMOTE_SYNC_INTERVAL_MS = 60000; // remote last-seen sync every 60s (only if Supabase)
+    const HEARTBEAT_INTERVAL_MS = 30000; // heartbeat ke server setiap 30s
 
-    const sendHeartbeat = () => {
-      const session = localExamStore.getActiveSession();
+    const sendHeartbeat = async () => {
+      const session = getActiveSession();
       const now = Date.now();
-      localExamStore.touchLastHeartbeat();
+      if (session?.sessionId) {
+        try {
+          await heartbeat(session.sessionId);
+        } catch (e) {
+          console.error("Heartbeat gagal", e);
+        }
+      }
       if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
         window.flutter_inappwebview
           .callHandler('ExambrowserBridge', 'heartbeat', {
@@ -45,14 +50,6 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
       }
     };
 
-    const syncRemoteLastSeen = () => {
-      const session = localExamStore.getActiveSession();
-      // Optional remote "last seen" sync (Supabase only, no-op otherwise)
-      if (session?.sessionId) {
-        localExamStore.touchLastSeenRemote(session.sessionId);
-      }
-    };
-
     const timer = setInterval(() => {
       setTimeLeftSeconds(prev => (prev > 0 ? prev - 1 : 0));
 
@@ -60,14 +57,9 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
       setRealtimeClock(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
       const elapsed = now.getTime() - lastHeartbeatRef.current;
-      // Local heartbeat every 30s
       if (elapsed >= HEARTBEAT_INTERVAL_MS) {
         lastHeartbeatRef.current = now.getTime();
         sendHeartbeat();
-      }
-      // Remote sync every 60s (throttled separately to save battery/bandwidth)
-      if (elapsed >= REMOTE_SYNC_INTERVAL_MS) {
-        syncRemoteLastSeen();
       }
     }, 1000);
 

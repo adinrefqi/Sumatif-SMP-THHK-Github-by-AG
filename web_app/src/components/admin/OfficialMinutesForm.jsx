@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { ClipboardList, CheckCircle2, UserCheck, School, BookOpen } from 'lucide-react';
-import { localExamStore } from '../../lib/supabase';
+import { ClipboardList, CheckCircle2 } from 'lucide-react';
+import { saveMinutes } from '../../lib/supabase';
 
-export default function OfficialMinutesForm({ activeExam, proctorRoom, onSubmitted }) {
+export default function OfficialMinutesForm({ proctorRoom, adminPin, onSubmitted }) {
   const roomInitial = proctorRoom || 'Ruang 1';
-  const existing = localExamStore.getOfficialMinutes(roomInitial) || {};
 
-  const [proctorName, setProctorName] = useState(existing.proctorName || '');
-  const [roomNumber, setRoomNumber] = useState(proctorRoom || existing.roomNumber || 'Ruang 1');
-  const [subject, setSubject] = useState(existing.subject || activeExam?.subject || 'Bahasa Indonesia');
-  const [totalRegistered, setTotalRegistered] = useState(existing.totalRegistered || 30);
-  const [totalPresent, setTotalPresent] = useState(existing.totalPresent || 30);
-  const [totalAbsent, setTotalAbsent] = useState(existing.totalAbsent || 0);
-  const [absentNotes, setAbsentNotes] = useState(existing.absentNotes || '');
-  const [generalNotes, setGeneralNotes] = useState(existing.generalNotes || 'Pelaksanaan ujian berjalan aman, tertib, dan lancar.');
+  const [proctorName, setProctorName] = useState('');
+  const [roomNumber, setRoomNumber] = useState(roomInitial);
+  const [subject, setSubject] = useState('Bahasa Indonesia');
+  const [totalRegistered, setTotalRegistered] = useState(30);
+  const [totalPresent, setTotalPresent] = useState(30);
+  const [totalAbsent, setTotalAbsent] = useState(0);
+  const [absentNotes, setAbsentNotes] = useState('');
+  const [generalNotes, setGeneralNotes] = useState('Pelaksanaan ujian berjalan aman, tertib, dan lancar.');
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
+    setErrorMsg('');
+
     const payload = {
       proctorName,
       roomNumber,
@@ -30,9 +34,15 @@ export default function OfficialMinutesForm({ activeExam, proctorRoom, onSubmitt
       submittedAt: new Date().toISOString()
     };
 
-    const saved = localExamStore.saveOfficialMinutes(payload, roomNumber);
-    if (onSubmitted) {
-      onSubmitted(saved);
+    try {
+      const res = await saveMinutes({ pin: adminPin, room: roomNumber, data: payload });
+      if (onSubmitted) {
+        onSubmitted(payload);
+      }
+    } catch (err) {
+      setErrorMsg(`Gagal menyimpan Berita Acara: ${err.message || 'Terjadi kesalahan'}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -53,6 +63,12 @@ export default function OfficialMinutesForm({ activeExam, proctorRoom, onSubmitt
           </p>
         </div>
       </div>
+
+      {errorMsg && (
+        <div className="p-3 bg-bad/10 border border-bad/25 text-bad text-xs font-semibold rounded-lg mb-4">
+          {errorMsg}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -155,10 +171,11 @@ export default function OfficialMinutesForm({ activeExam, proctorRoom, onSubmitt
 
         <button
           type="submit"
-          className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-xs uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 mt-2"
+          disabled={isSaving}
+          className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-xs uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:pointer-events-none"
         >
           <CheckCircle2 className="w-4 h-4" />
-          <span>Konfirmasi Berita Acara & Buka Rilis Token</span>
+          <span>{isSaving ? 'Menyimpan...' : 'Konfirmasi Berita Acara & Buka Rilis Token'}</span>
         </button>
       </form>
     </div>

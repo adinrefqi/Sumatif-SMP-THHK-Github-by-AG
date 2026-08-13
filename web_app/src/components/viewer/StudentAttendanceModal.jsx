@@ -1,11 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { FileSignature, Eraser, CheckCircle2, User, ShieldCheck } from 'lucide-react';
+import { openExam, saveActiveSession } from '../../lib/supabase';
 
-export default function StudentAttendanceModal({ studentInfo, examTitle, onConfirm }) {
+export default function StudentAttendanceModal({ studentInfo, examTitle, tokenInput, selectedRoom, onConfirm }) {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -80,27 +82,65 @@ export default function StudentAttendanceModal({ studentInfo, examTitle, onConfi
     setHasSignature(false);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!hasSignature) {
       setErrorMsg('Silakan buat tanda tangan Anda terlebih dahulu pada kotak pen di atas');
       return;
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
 
     const canvas = canvasRef.current;
     const signatureDataUrl = canvas.toDataURL('image/png');
 
-    onConfirm({
-      ...studentInfo,
-      signatureUrl: signatureDataUrl,
-      timestamp: new Date().toISOString(),
-      timeFormatted: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-    });
+    try {
+      // Revalidasi token + catat presensi & buka sesi di server.
+      // SATU-SATUNYA tempat pdf_url keluar dari server.
+      const opened = await openExam({
+        nisn: studentInfo.nisn,
+        room: selectedRoom || studentInfo.room,
+        token: tokenInput || studentInfo.tokenEntered,
+        examId: studentInfo.chosenExam?.id,
+        signature: signatureDataUrl,
+      });
+
+      // Persist sesi aktif untuk heartbeat & violation (identitas ringan)
+      saveActiveSession({
+        sessionId: opened.session_id,
+        studentId: studentInfo.nisn,
+        name: studentInfo.name,
+        className: studentInfo.class,
+        room: selectedRoom || studentInfo.room,
+        examId: studentInfo.chosenExam?.id || null,
+        subject: studentInfo.chosenExam?.subject || null,
+        startedAt: Date.now(),
+        examDurationMinutes: opened.duration_minutes || studentInfo.chosenExam?.duration_minutes || 90,
+      });
+
+      onConfirm({
+        ...studentInfo,
+        signatureUrl: signatureDataUrl,
+        sessionId: opened.session_id,
+        exam: {
+          ...studentInfo.chosenExam,
+          pdf_url: opened.pdf_url,
+          duration_minutes: opened.duration_minutes || studentInfo.chosenExam?.duration_minutes,
+          title: opened.title || studentInfo.chosenExam?.title,
+        },
+        timestamp: new Date().toISOString(),
+        timeFormatted: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      });
+    } catch (err) {
+      setErrorMsg(`Gagal membuka naskah: ${err.message || 'Terjadi kesalahan'}. Mintalah token terbaru dari Proktor.`);
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-console-panel border border-console-line rounded-xl max-w-md w-full p-5 md:p-6 shadow-pop animate-fadeUp">
-        
+
         {/* Header */}
         <div className="text-center mb-4 border-b border-console-line pb-3">
           <div className="w-10 h-10 bg-accent/10 border border-accent/25 text-accent rounded-lg flex items-center justify-center mx-auto mb-2">
@@ -177,10 +217,11 @@ export default function StudentAttendanceModal({ studentInfo, examTitle, onConfi
 
         <button
           onClick={handleConfirm}
-          className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-xs uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+          disabled={isSubmitting}
+          className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-xs uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
         >
           <CheckCircle2 className="w-4 h-4" />
-          <span>Konfirmasi Presensi & Buka Soal</span>
+          <span>{isSubmitting ? 'Memverifikasi & Membuka Naskah...' : 'Konfirmasi Presensi & Buka Soal'}</span>
         </button>
 
       </div>

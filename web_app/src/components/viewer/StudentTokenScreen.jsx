@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { KeyRound, ShieldCheck, ArrowRight, AlertCircle, Download } from 'lucide-react';
-import { validateStudentToken } from '../../utils/tokenRotationManager';
-import { localExamStore, getStudentByNisn, isSupabaseConfigured } from '../../lib/supabase';
+import { checkToken } from '../../lib/supabase';
 
 import StudentAttendanceModal from './StudentAttendanceModal';
 
-export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, activeExam, activeExams = [] }) {
+export default function StudentTokenScreen({ onTokenValidated }) {
   const [studentName, setStudentName] = useState('');
   const [nisn, setNisn] = useState('');
   const [studentClass, setStudentClass] = useState('8');
@@ -15,15 +14,11 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
   const [errorMsg, setErrorMsg] = useState('');
   const [validatedInfo, setValidatedInfo] = useState(null);
 
-  const availableExamsList = activeExams.length > 0 ? activeExams : (activeExam ? [activeExam] : []);
-  
-  // Grade matching logic
-  const gradeKey = studentClass.startsWith('7') ? 'Kelas 7' : studentClass.startsWith('9') ? 'Kelas 9' : 'Kelas 8';
-  const gradeMatchingExams = availableExamsList.filter(e => e.grade === gradeKey);
-  const currentExamOptions = gradeMatchingExams.length > 0 ? gradeMatchingExams : availableExamsList;
+  // Daftar soal datang dari respons RPC check_token (TANPA pdf_url)
+  const [serverExams, setServerExams] = useState([]);
 
-  // Selected Exam
-  const chosenExam = currentExamOptions.find(e => e.id === selectedExamId) || currentExamOptions[0] || activeExam;
+  const currentExamOptions = serverExams;
+  const chosenExam = currentExamOptions.find(e => e.id === selectedExamId) || currentExamOptions[0] || null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,47 +28,43 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
       setErrorMsg('Silakan isi Nama Lengkap Peserta');
       return;
     }
-
     if (!inputToken.trim() || inputToken.length !== 6) {
       setErrorMsg('Silakan masukkan 6 Karakter Token Ujian dengan benar');
       return;
     }
-
-    // Validasi NISN terhadap daftar siswa terdaftar (jika Supabase aktif)
     const nisnValue = (nisn || '').trim();
-    if (isSupabaseConfigured) {
-      if (!nisnValue) {
-        setErrorMsg('NISN wajib diisi untuk verifikasi kehadiran');
-        return;
-      }
-      const registered = await getStudentByNisn(nisnValue);
-      if (!registered) {
-        setErrorMsg('NISN tidak terdaftar sebagai peserta ujian. Hubungi pengawas/panitia.');
-        return;
-      }
-      // Cocokkan nama & ruang dengan data terdaftar (informasi, bukan hard-block)
-      if (studentName.trim().toLowerCase() !== registered.name.toLowerCase()) {
-        setErrorMsg(`Nama tidak sesuai dengan data terdaftar (${registered.name}). Periksa kembali.`);
-        return;
-      }
-      if (selectedRoom !== registered.room) {
-        setErrorMsg(`Ruang yang dipilih tidak sesuai. Anda terdaftar di ${registered.room}.`);
-        return;
-      }
+    if (!nisnValue) {
+      setErrorMsg('NISN wajib diisi untuk verifikasi kehadiran');
+      return;
     }
 
-    const isValid = validateStudentToken(inputToken, activeTokenObj, localExamStore.getPreviousToken());
-    if (isValid) {
+    try {
+      const res = await checkToken({ nisn: nisnValue, room: selectedRoom, token: inputToken });
+      if (!res?.ok) {
+        setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
+        return;
+      }
+
+      // Cocokkan nama (informasi, bukan hard-block)
+      if (studentName.trim().toLowerCase() !== res.name.toLowerCase()) {
+        setErrorMsg(`Nama tidak sesuai dengan data terdaftar (${res.name}). Periksa kembali.`);
+        return;
+      }
+
+      setServerExams(res.exams || []);
       setValidatedInfo({
         name: studentName,
-        nisn: nisnValue || '0080000000',
-        class: studentClass,
+        nisn: nisnValue,
+        class: res.class || studentClass,
         room: selectedRoom,
         tokenEntered: inputToken.toUpperCase(),
         chosenExam: chosenExam
       });
-    } else {
-      setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
+    } catch (err) {
+      const msg = err?.message || '';
+      if (msg.includes('NISN')) setErrorMsg(msg);
+      else if (msg.includes('Ruang')) setErrorMsg(msg);
+      else setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
     }
   };
 
@@ -82,25 +73,11 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
       ...attendanceData,
       room: selectedRoom
     };
-    // Save student attendance record locally
-    localExamStore.saveAttendanceRecord(fullAttendance);
     if (onTokenValidated) {
       const session = {
         ...fullAttendance,
         exam: chosenExam
       };
-      // Persist active session identity for heartbeat & violation logging
-      localExamStore.saveActiveSession({
-        sessionId: `sess-${Date.now()}-${(session.nisn || 'x').toString()}`,
-        studentId: session.nisn,
-        name: session.name,
-        className: session.class,
-        room: session.room,
-        examId: chosenExam?.id || null,
-        subject: chosenExam?.subject || null,
-        startedAt: Date.now(),
-        examDurationMinutes: chosenExam?.duration_minutes || 90
-      });
       onTokenValidated(session);
     }
   };
@@ -127,7 +104,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
             Masuk Sesi Ujian
           </h2>
           <p className="text-xs text-ink-muted mt-1 font-semibold">
-            {chosenExam?.title || activeExam?.title || 'Sumatif Ujian Sekolah SMP THHK'}
+            {chosenExam?.title || 'Sumatif Ujian Sekolah SMP THHK'}
           </p>
         </div>
 
@@ -175,11 +152,11 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5">
-                NISN / No. Ujian {isSupabaseConfigured ? '*' : ''}
+                NISN / No. Ujian *
               </label>
               <input
                 type="text"
-                required={isSupabaseConfigured}
+                required
                 value={nisn}
                 onChange={(e) => setNisn(e.target.value)}
                 placeholder="NISN siswa"
@@ -203,7 +180,7 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
             </div>
           </div>
 
-          {/* Exam Selector if multiple exams are active */}
+          {/* Exam Selector from server response */}
           {currentExamOptions.length > 1 && (
             <div>
               <label className="block text-[10px] font-bold text-accent uppercase tracking-label mb-1.5">
@@ -252,8 +229,6 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
           </button>
         </form>
 
-
-
         <p className="text-[11px] text-ink-faint text-center mt-3 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-ok" />
           <span>Exambrowser Protected • Mode Pembaca Naskah Soal</span>
@@ -264,7 +239,9 @@ export default function StudentTokenScreen({ activeTokenObj, onTokenValidated, a
       {validatedInfo && (
         <StudentAttendanceModal
           studentInfo={validatedInfo}
-          examTitle={activeExam?.title}
+          examTitle={chosenExam?.title}
+          tokenInput={inputToken}
+          selectedRoom={selectedRoom}
           onConfirm={handleAttendanceConfirmed}
         />
       )}

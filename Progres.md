@@ -15,7 +15,7 @@
 |---|---|---|
 | Perencanaan & Dokumen PRD | ✅ Selesai | `PRD.md`, `Desain.md`, `Progres.md` lengkap. |
 | React + Vite Frontend App (`web_app`) | ✅ Selesai | Mobile Touch PDF Viewer, Rotasi Token 15-Menit, Supabase Client, Offline Fallback. |
-| Supabase Cloud Integration | ✅ Selesai | Bucket Storage & Realtime Token Ready. |
+| Supabase Cloud Integration | ✅ Selesai | Realtime Token & Supabase DB Ready (tanpa storage bucket). |
 | Native Android Kiosk App (`android_app`) | ⚠️ Ditinggalkan | Tidak dibangun CI. Dijadwalkan dihapus di Fase 2.2. |
 | **Flutter Kiosk App (`flutter_app`)** | ✅ Selesai | Flutter InAppWebView, `FLAG_SECURE`, Kiosk Mode, Alarm Audio 95%, Exit Password (dikonfigurasi terpisah). |
 | **GitHub Actions Auto-Build APK** | ✅ Selesai | Workflow `.github/workflows/build-apk.yml` otomatis mengkompilasi file `.apk` di Cloud GitHub. |
@@ -36,7 +36,7 @@
 
   - Menambahkan konfigurasi **Signed Release APK Android**: Keystore (`upload-keystore.jks`) & `key.properties` resmi SMP THHK Tegal.
   - Menambahkan publikasi otomatis **GitHub Release v1.0.0** untuk mengunduh `.apk` resmi yang telah ditandatangani digital (*Signed Official Release*).
-  - Menambahkan fitur **Batch Upload Multi-File PDF** dengan Smart Filename Parser (deteksi otomatis mapel & kelas dari nama file) dan Tabel Review Batch.
+  - Menambahkan **Manajemen Bank Soal Master via Link Google Drive**: upload file PDF dihapus dari kode — naskah soal hanya melalui Link Google Drive.
   - Menambahkan **Arsitektur Tepat 3 Ruang Ujian (Ruang 1, Ruang 2, Ruang 3)**: Pemilihan Ruang Ujian pada login Proktor dan form presensi Siswa.
   - Menambahkan **Monitoring Terpadu 3 Ruangan** pada Super Admin Dashboard untuk memantau status Berita Acara dan kehadiran peserta di Ruang 1, 2, dan 3.
   - Menambahkan Gate Wajib Berita Acara Ujian saat Proktor pertama kali login sebelum membuka rilis token.

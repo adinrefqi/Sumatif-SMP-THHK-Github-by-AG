@@ -1,79 +1,36 @@
 -- ============================================================
--- SMP THHK Sumatif Exam Portal — Supabase Schema
--- Jalankan di: Supabase Dashboard → SQL Editor → New query
+-- SMP THHK Sumatif Exam Portal — Supabase Schema (Kondisi Akhir)
 --
--- File ini mencerminkan kondisi akhir setelah FASE 0 (Emergency
--- Lockdown). Untuk database yang sudah berjalan, jalankan
--- migrations/000_emergency_lockdown.sql — bukan file ini.
+-- Untuk database yang sudah berjalan, jalankan BERURUTAN di
+-- Supabase Dashboard → SQL Editor:
+--   1. migrations/000_emergency_lockdown.sql   (Fase 0)
+--   2. migrations/001_server_authority.sql     (Fase 1)
 --
--- Prinsip RLS setelah Fase 0: anon key ada di bundle JS publik,
--- jadi anggap SIAPA PUN memegangnya. Yang boleh anon lakukan
--- dipersempit ke minimum yang membuat aplikasi tetap jalan.
+-- Setelah Fase 1, TIDAK ada policy anon pada tabel apa pun kecuali
+-- violation_logs (insert-only). Semua akses lewat RPC security definer
+-- yang menerima PIN sebagai argumen (tanpa JWT).
 -- ============================================================
 
--- 1. exam_sessions: daftar ujian yang diterbitkan admin
---    id berupa string seperti 'exam-1786540000000' (dikirim dari kode web)
-create table if not exists public.exam_sessions (
-  id text primary key,
-  title text,
-  subject text,
-  grade text,
-  duration_minutes integer,
-  pdf_url text,
-  file_name text,
-  source_type text default 'gdrive',
-  created_at timestamptz not null default now(),
-  -- kolom integritas ujian
-  last_seen_at timestamptz,
-  violations_count integer not null default 0,
-  status text not null default 'ACTIVE' -- ACTIVE | HELP_NEEDED | DISCONNECTED
-);
+-- Prasyarat tabel dibuat melalui migrations/001_server_authority.sql.
+-- File ini adalah referensi skema akhir untuk dokumentasi & setup baru.
 
-alter table public.exam_sessions enable row level security;
+-- Ringkasan tabel (dibuat oleh 001_server_authority.sql):
+--   exams               — bank soal (rename dari exam_sessions), kolom is_active
+--   exam_tokens         — token aktif per ruang (rotasi 15 menit, server)
+--   room_pins           — PIN per ruang + super_admin, ter-hash bcrypt
+--   attendance          — presensi + TTD siswa (unique nisn+exam_id)
+--   student_sessions    — sesi live siswa (heartbeat)
+--   official_minutes    — berita acara per ruang (jsonb)
+--   app_settings        — saklar master (token_access_enabled)
+--   students            — roster siswa (dari Fase 0, tetap)
+--   violation_logs      — log pelanggaran (insert-only anon, tanpa baca)
 
--- TANPA POLICY ANON. Tabel ini memuat pdf_url (link naskah soal);
--- select anon berarti naskah bisa diambil siapa pun sebelum ujian.
--- Akses dipulihkan di Fase 1 lewat RPC security definer.
-
--- 2. violation_logs: catatan pelanggaran integritas ujian
-create table if not exists public.violation_logs (
-  id uuid primary key default gen_random_uuid(),
-  session_id text,
-  student_id text,
-  type text not null,
-  detail text,
-  created_at timestamptz not null default now()
-);
-
-alter table public.violation_logs enable row level security;
-
--- Insert-only: siswa perlu bisa melapor, tapi tidak boleh membaca
--- laporan siswa lain (bocor = ketahuan deteksi apa yang aktif).
-create policy "anon_insert_violation_logs" on public.violation_logs
-  for insert to anon with check (true);
-
--- 3. students: daftar siswa terdaftar yang boleh mengikuti ujian
-create table if not exists public.students (
-  nisn text primary key,
-  name text not null,
-  class text not null,       -- tingkat kelas saja: 7 | 8 | 9
-  room text not null,        -- Ruang 1 | Ruang 2 | Ruang 3
-  created_at timestamptz not null default now()
-);
-
-alter table public.students enable row level security;
-
--- Select-only, dan HANYA sementara: login siswa masih memvalidasi
--- NISN di klien. Dicabut di Fase 1 setelah validasi pindah ke RPC.
-create policy "anon_select_students" on public.students
-  for select to anon using (true);
-
--- ============================================================
--- Catatan:
--- 1. Bucket Storage 'exam-pdfs' tidak diperlukan — naskah soal
---    hanya via Link Google Drive.
--- 2. Tabel student_logs sudah dihapus (tidak dirujuk kode mana pun).
--- 3. Yang rusak setelah Fase 0 (disengaja, dipulihkan di Fase 1):
---    tambah/hapus siswa di StudentManager, publikasi soal baru dari
---    PdfUploader, tab Monitoring Integritas, dan sinkronisasi last_seen.
--- ============================================================
+-- RPC yang tersedia (semua security definer, grant execute ke anon):
+--   Jalur siswa:   check_token, open_exam, heartbeat
+--   Jalur panel:   verify_pin, release_token, current_token,
+--                  proctor_dashboard, save_minutes
+--   Admin:         admin_list_exams, admin_upsert_exam, admin_delete_exam,
+--                  admin_set_active_exams, admin_list_students,
+--                  admin_add_student, admin_bulk_add_students,
+--                  admin_delete_student, toggle_token_access,
+--                  get_token_access, set_room_pin

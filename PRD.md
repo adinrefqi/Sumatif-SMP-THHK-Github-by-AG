@@ -39,7 +39,7 @@ Sistem ini menerapkan **Metode Hibrida**:
 
 ### C. Super Admin (Panitia Ujian)
 - Memasukkan PIN Super Admin (dikonfigurasi terpisah, tidak disimpan di repo).
-- Mengunggah file PDF naskah soal lokal atau menginput Link Google Drive PDF.
+- Menginput Link Google Drive naskah soal PDF.
 - Mengontrol Master Switch "Buka/Kunci Akses Rilis Token" untuk Proktor Ruangan.
 
 ---
@@ -67,7 +67,7 @@ Sistem ini menerapkan **Metode Hibrida**:
 6. **Integrasi Google Drive PDF & Master Switch Token:** Pilihan input link GDrive untuk soal PDF dan penguncian rilis token oleh Super Admin.
 7. **Gate Berita Acara Proktor:** Kewajiban proktor mengisi berita acara sebelum membuka rilis token & monitoring.
 8. **Super Admin PDF Readability Inspector:** Fitur uji pratinjau tampilan naskah soal PDF di layar HP siswa untuk memastikan dokumen terbaca jelas sebelum rilis token.
-9. **Batch Multi-File PDF Upload & Multi-Active Exam Selection:** Fitur unggah banyak file PDF sekaligus dengan smart filename parser, manajemen bank soal master, dan aktivasi banyak naskah soal sekaligus (*Multi-Active Exams*) yang dicocokkan otomatis per tingkat kelas siswa.
+9. **Manajemen Bank Soal Master via Link Google Drive & Multi-Active Exam Selection:** Manajemen bank soal master dengan link Google Drive, dan aktivasi banyak naskah soal sekaligus (*Multi-Active Exams*) yang dicocokkan otomatis per tingkat kelas siswa.
 10. **Arsitektur Tepat 3 Ruang Ujian (Ruang 1, Ruang 2, Ruang 3):** 1 Akun Proktor terikat pada masing-masing dari tepat 3 ruang ujian sekolah untuk mengelola Berita Acara dan Presensi TTD siswa per ruangan.
 
 ---
@@ -76,6 +76,6 @@ Sistem ini menerapkan **Metode Hibrida**:
 
 - **Target OS:** Android 14+ (SDK 34) dengan backward compatibility hingga Android 7.0 (API 24).
 - **Deployment Web:** Vercel Hosting (Auto CI/CD via GitHub Repository).
-- **Cloud Infrastructure:** Supabase PostgreSQL Database & Supabase Storage (Bucket PDF Soal).
+- **Cloud Infrastructure:** Supabase PostgreSQL Database (tanpa storage bucket — naskah soal via Google Drive).
 - **Package Name Android:** `id.sch.smpthhk.exambrowser`.
 - **Exit Password & PIN Panel:** dikonfigurasi terpisah di luar repo (GitHub Secret / database). Nilai literal tidak boleh masuk ke repo maupun teks UI.

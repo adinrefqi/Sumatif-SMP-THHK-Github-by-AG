@@ -4,17 +4,13 @@ import {
   Lock, Unlock, ShieldAlert, Eye, X, Smartphone, CheckCheck,
   Trash2, Check, FolderKanban
 } from 'lucide-react';
-import { supabase, isSupabaseConfigured, localExamStore } from '../../lib/supabase';
+import {
+  adminUpsertExam, adminDeleteExam, adminListExams, adminSetActiveExams,
+  toggleTokenAccess, getTokenAccess
+} from '../../lib/supabase';
 import MobilePdfViewer from '../viewer/MobilePdfViewer';
 
-export default function PdfUploader({
-  onExamCreated,
-  isTokenAccessEnabled,
-  onToggleTokenAccess,
-  activeExamIds = [],
-  onToggleActiveExamId,
-  activeExams = []
-}) {
+export default function PdfUploader({ adminPin }) {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('Bahasa Indonesia');
   const [grade, setGrade] = useState('Kelas 8');
@@ -27,16 +23,34 @@ export default function PdfUploader({
   const [showPdfCheckModal, setShowPdfCheckModal] = useState(false);
   const [testPdfUrl, setTestPdfUrl] = useState(null);
 
-  // Exam List State
-  const [savedExams, setSavedExams] = useState(localExamStore.getExams());
+  // Exam List State (dari server)
+  const [savedExams, setSavedExams] = useState([]);
+  const [activeExamIds, setActiveExamIds] = useState([]);
+  const [isTokenAccessEnabled, setIsTokenAccessEnabled] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  const reloadExams = () => {
-    setSavedExams(localExamStore.getExams());
+  const reloadExams = async () => {
+    try {
+      const list = await adminListExams(adminPin);
+      const exams = Array.isArray(list) ? list : [];
+      setSavedExams(exams);
+      setActiveExamIds(exams.filter(e => e.is_active).map(e => e.id));
+      return exams;
+    } catch (err) {
+      setLoadError(`Gagal memuat bank soal: ${err.message || 'Terjadi kesalahan'}`);
+      return [];
+    }
   };
 
   useEffect(() => {
     reloadExams();
-  }, []);
+    getTokenAccess(adminPin)
+      .then((res) => {
+        if (res && typeof res.enabled === 'boolean') setIsTokenAccessEnabled(res.enabled);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminPin]);
 
   const convertGDriveUrl = (urlStr) => {
     if (!urlStr) return '';
@@ -49,7 +63,7 @@ export default function PdfUploader({
     return urlStr;
   };
 
-  // Single Submit (Google Drive link only)
+  // Single Submit (Google Drive link only) -> server
   const handleSingleSubmit = async (e) => {
     e.preventDefault();
     if (!gdriveUrl.trim()) {
@@ -59,13 +73,13 @@ export default function PdfUploader({
 
     setIsUploading(true);
     setMessage(null);
+    setLoadError('');
 
     try {
       const finalPdfUrl = convertGDriveUrl(gdriveUrl.trim());
       const fileName = 'Naskah_Google_Drive.pdf';
 
       const newExam = {
-        id: `exam-${Date.now()}`,
         title: title || 'Sumatif Ujian PDF',
         subject,
         grade,
@@ -73,32 +87,24 @@ export default function PdfUploader({
         pdf_url: finalPdfUrl,
         file_name: fileName,
         source_type: 'gdrive',
-        created_at: new Date().toISOString()
+        is_active: true, // langsung aktif saat diterbitkan
       };
 
-      if (isSupabaseConfigured) {
-        const { error: dbError } = await supabase
-          .from('exam_sessions')
-          .insert([newExam]);
+      const res = await adminUpsertExam(adminPin, newExam);
+      const createdId = res?.id;
 
-        if (dbError) throw dbError;
-      }
-
-      const existingExams = localExamStore.getExams();
-      const updatedExams = [newExam, ...existingExams];
-      localExamStore.saveExams(updatedExams);
-      reloadExams();
+      // Aktifkan ujian ini di server (set aktif semua, termasuk yang baru)
+      const current = await reloadExams();
+      const ids = [...new Set([...current.map(x => x.id).filter(id => activeExamIds.includes(id)), createdId].filter(Boolean))];
+      await adminSetActiveExams(adminPin, ids);
+      await reloadExams();
 
       setMessage({ type: 'success', text: 'Naskah soal berhasil diterbitkan & disinkronkan ke sistem.' });
       setGdriveUrl('');
       setTitle('');
-
-      if (onExamCreated) {
-        onExamCreated(newExam);
-      }
     } catch (err) {
       console.error('Upload Error:', err);
-      setMessage({ type: 'error', text: `Gagal mengunggah: ${err.message || 'Terjadi kesalahan'}` });
+      setMessage({ type: 'error', text: `Gagal menerbitkan: ${err.message || 'Terjadi kesalahan'}` });
     } finally {
       setIsUploading(false);
     }
@@ -110,21 +116,43 @@ export default function PdfUploader({
       if (gdriveUrl.trim()) {
         urlToTest = convertGDriveUrl(gdriveUrl.trim());
       } else {
-        urlToTest = activeExam?.pdf_url || savedExams[0]?.pdf_url || null;
+        urlToTest = savedExams[0]?.pdf_url || null;
       }
     }
-
     setTestPdfUrl(urlToTest);
     setShowPdfCheckModal(true);
   };
 
-  const handleDeleteExam = (id) => {
+  const handleDeleteExam = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus naskah soal ini dari Bank Soal Master?')) {
-      const updated = localExamStore.deleteExam(id);
-      setSavedExams(updated);
-      if (activeExam?.id === id && updated[0] && onSelectActiveExam) {
-        onSelectActiveExam(updated[0]);
+      try {
+        await adminDeleteExam(adminPin, id);
+        await reloadExams();
+      } catch (err) {
+        setMessage({ type: 'error', text: `Gagal menghapus: ${err.message || 'Terjadi kesalahan'}` });
       }
+    }
+  };
+
+  const handleToggleActiveExamId = async (examId) => {
+    const next = activeExamIds.includes(examId)
+      ? activeExamIds.filter(id => id !== examId)
+      : [...activeExamIds, examId];
+    try {
+      await adminSetActiveExams(adminPin, next);
+      setActiveExamIds(next);
+    } catch (err) {
+      setMessage({ type: 'error', text: `Gagal mengubah status aktif: ${err.message || 'Terjadi kesalahan'}` });
+    }
+  };
+
+  const handleToggleTokenAccess = async () => {
+    try {
+      const next = !isTokenAccessEnabled;
+      await toggleTokenAccess(adminPin, next);
+      setIsTokenAccessEnabled(next);
+    } catch (err) {
+      setMessage({ type: 'error', text: `Gagal mengubah saklar token: ${err.message || 'Terjadi kesalahan'}` });
     }
   };
 
@@ -134,7 +162,7 @@ export default function PdfUploader({
 
   return (
     <div className="space-y-6">
-      
+
       {/* Super Admin Control Card: Master Token Release Switch */}
       <div className="bg-console-raised border border-accent/30 rounded-xl p-5 shadow-panel flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -164,7 +192,7 @@ export default function PdfUploader({
 
         <button
           type="button"
-          onClick={() => onToggleTokenAccess(!isTokenAccessEnabled)}
+          onClick={handleToggleTokenAccess}
           className={`px-4 py-2.5 rounded-lg font-extrabold text-xs uppercase tracking-wider border transition-colors flex items-center gap-2 ${
             isTokenAccessEnabled
               ? 'bg-bad/15 border-bad/40 text-bad hover:bg-bad/25'
@@ -185,59 +213,11 @@ export default function PdfUploader({
         </button>
       </div>
 
-      {/* Super Admin Monitoring 3 Ruang Ujian Card */}
-      <div className="bg-console-panel border border-console-line rounded-xl p-5 shadow-panel">
-        <div className="flex items-center justify-between border-b border-console-line pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-accent" />
-            <h3 className="font-extrabold text-sm text-ink-strong tracking-tight">
-              Status Terpadu 3 Ruang Ujian Sumatif
-            </h3>
-          </div>
-          <span className="text-[10px] font-mono font-bold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded">
-            Tepat 3 Ruang Ujian (Ruang 1, 2, 3)
-          </span>
+      {loadError && (
+        <div className="p-3.5 bg-bad/10 border border-bad/30 rounded-xl text-bad text-xs font-semibold">
+          {loadError}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {['Ruang 1', 'Ruang 2', 'Ruang 3'].map((room) => {
-            const minutes = localExamStore.getOfficialMinutes(room);
-            const attendance = localExamStore.getAttendanceRecords().filter(r => r.room === room);
-            return (
-              <div key={room} className="bg-console-raised border border-console-line rounded-xl p-3.5 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-extrabold text-xs text-ink-strong uppercase tracking-wider font-mono">
-                      {room}
-                    </span>
-                    {minutes ? (
-                      <span className="px-2 py-0.5 bg-ok/15 text-ok border border-ok/30 text-[9px] font-bold uppercase rounded">
-                        Berita Acara OK
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-bad/15 text-bad border border-bad/30 text-[9px] font-bold uppercase rounded">
-                        Belum Berita Acara
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-[11px] text-ink-muted">
-                    Proktor: <strong className="text-ink">{minutes?.proctorName || 'Belum Mengisi'}</strong>
-                  </p>
-                  <p className="text-[11px] text-ink-muted mt-0.5">
-                    Mata Pelajaran: <span className="text-accent font-semibold">{minutes?.subject || 'Belum Diisi'}</span>
-                  </p>
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-console-line flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-ink-faint">Peserta Hadir:</span>
-                  <strong className="text-ok font-extrabold">{attendance.length} Siswa</strong>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      )}
 
       {/* Main Upload Form Card */}
       <div className="bg-console-panel border border-console-line rounded-xl shadow-panel p-5 md:p-6">
@@ -384,7 +364,7 @@ export default function PdfUploader({
             </h3>
           </div>
           <span className="text-[11px] text-ink-faint font-mono">
-            Sesi Aktif ({activeExamIds.length} Soal): <strong className="text-accent">{activeExams.map(e => e.subject).join(', ') || 'Belum Dipilih'}</strong>
+            Sesi Aktif ({activeExamIds.length} Soal): <strong className="text-accent">{savedExams.filter(e => e.is_active).map(e => e.subject).join(', ') || 'Belum Dipilih'}</strong>
           </span>
         </div>
 
@@ -426,7 +406,7 @@ export default function PdfUploader({
                   <div className="flex items-center justify-between pt-3 mt-3 border-t border-console-line text-xs">
                     <button
                       type="button"
-                      onClick={() => onToggleActiveExamId && onToggleActiveExamId(ex.id)}
+                      onClick={() => handleToggleActiveExamId(ex.id)}
                       className={`px-2.5 py-1 text-[10px] uppercase font-extrabold tracking-wider rounded transition-colors flex items-center gap-1 ${
                         isActive
                           ? 'bg-ok/20 text-ok border border-ok/40 hover:bg-bad/20 hover:text-bad hover:border-bad/40'
@@ -471,7 +451,7 @@ export default function PdfUploader({
       {showPdfCheckModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-fadeUp">
           <div className="bg-console-panel border border-console-line rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-            
+
             {/* Modal Top Header */}
             <div className="bg-console-raised px-4 py-3 border-b border-console-line flex items-center justify-between">
               <div className="flex items-center gap-2.5">

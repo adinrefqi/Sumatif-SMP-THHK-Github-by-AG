@@ -11,7 +11,6 @@ Sistem ini terbagi menjadi 3 lapisan (*layers*) utama:
 graph TD
     A[Siswa HP/Tablet Android 14+] -->|Direct WebView HTTPS| B[Vercel Cloud Hosting]
     B -->|React + Vite SPA| C[Supabase Cloud Services]
-    C -->|PDF File Storage| D[Bucket: exam-pdfs]
     C -->|Realtime Database| E[Table: exam_sessions & tokens]
     A -->|JavaScript Bridge| F[Android Native Security Guard]
     F -->|FLAG_SECURE & LockTask| G[Android OS System Kiosk]
@@ -25,7 +24,7 @@ graph TD
 
 ### A. Web Application (`web_app/`)
 - **`lib/supabase.js`**: Client SDK Supabase & local stores helper (termasuk penyimpanan presensi siswa, TTD digital, berita acara, dan status kuncian token).
-- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk unggah file PDF, link Google Drive, Batch Upload, Master Switch Token, serta **Kartu Status Terpadu 3 Ruang Ujian (Ruang 1, 2, 3)**.
+- **`components/admin/PdfUploader.jsx`**: Modul Super Admin untuk input Link Google Drive naskah soal, Master Switch Token, serta **Kartu Status Terpadu 3 Ruang Ujian (Ruang 1, 2, 3)**.
 - **`components/admin/OfficialMinutesForm.jsx`**: Form Berita Acara Ujian terikat pada **Ruang 1**, **Ruang 2**, atau **Ruang 3**.
 - **`components/admin/ProctorTokenMonitor.jsx`**: Dashboard Proktor real-time khusus ruangan terkait (`Ruang 1`, `Ruang 2`, `Ruang 3`).
 - **`components/viewer/StudentAttendanceModal.jsx`**: Modal Canvas Tanda Tangan Digital siswa yang mencatat presensi sesuai **Ruang Ujian** tempat siswa duduk.

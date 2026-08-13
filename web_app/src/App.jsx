@@ -8,31 +8,22 @@ import StudentTokenScreen from './components/viewer/StudentTokenScreen';
 import MobilePdfViewer from './components/viewer/MobilePdfViewer';
 import ExamTimerHeader from './components/viewer/ExamTimerHeader';
 import OfflineFallbackModal from './components/viewer/OfflineFallbackModal';
-import { localExamStore } from './lib/supabase';
+import { getActiveSession, appendViolation, clearActiveSession, verifyPin } from './lib/supabase';
 import { Lock, ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function App() {
   const [activeMode, setActiveMode] = useState('student'); // 'student' | 'admin'
-  const [activeTokenObj, setActiveTokenObj] = useState(localExamStore.getActiveToken());
   const [studentSession, setStudentSession] = useState(null); // null if not logged in
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineModal, setShowOfflineModal] = useState(false);
 
-  const [isTokenAccessEnabled, setIsTokenAccessEnabled] = useState(localExamStore.isTokenAccessEnabled());
-  const [activeExamIds, setActiveExamIds] = useState(localExamStore.getActiveExamIds());
-  const [activeExams, setActiveExams] = useState(localExamStore.getActiveExams());
-
-  const handleToggleActiveExamId = (examId) => {
-    const updatedIds = localExamStore.toggleActiveExamId(examId);
-    setActiveExamIds(updatedIds);
-    setActiveExams(localExamStore.getActiveExams());
-  };
-
-  const handleExamCreated = (newExam) => {
-    const updatedIds = localExamStore.toggleActiveExamId(newExam.id);
-    setActiveExamIds(updatedIds);
-    setActiveExams(localExamStore.getActiveExams());
-  };
+  const [adminAuthPin, setAdminAuthPin] = useState('');
+  const [adminPin, setAdminPin] = useState(null); // PIN tersimpan di state React (bukan localStorage)
+  const [proctorRoomInput, setProctorRoomInput] = useState('Ruang 1');
+  const [activeProctorRoom, setActiveProctorRoom] = useState('Ruang 1');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isAdminRole, setIsAdminRole] = useState(false); // true: Super Admin, false: Proctor
+  const [adminError, setAdminError] = useState('');
 
   // Online / Offline Listeners
   useEffect(() => {
@@ -55,15 +46,14 @@ export default function App() {
   useEffect(() => {
     const disableCopy = (e) => {
       e.preventDefault();
-      // Log copy attempt as a violation (best-effort)
-      if (localExamStore.getActiveSession()) {
-        localExamStore.appendViolation('copy');
+      if (getActiveSession()) {
+        appendViolation('copy');
       }
     };
     const disableContextMenu = (e) => {
       e.preventDefault();
-      if (localExamStore.getActiveSession()) {
-        localExamStore.appendViolation('contextmenu');
+      if (getActiveSession()) {
+        appendViolation('contextmenu');
       }
     };
 
@@ -82,8 +72,7 @@ export default function App() {
 
     const onVisibilityChange = () => {
       if (document.hidden) {
-        localExamStore.appendViolation('visibility_hidden');
-        // Also notify the native wrapper so it can log natively
+        appendViolation('visibility_hidden');
         if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
           window.flutter_inappwebview
             .callHandler('ExambrowserBridge', 'violation', { type: 'visibility_hidden' })
@@ -92,7 +81,7 @@ export default function App() {
       }
     };
     const onBlur = () => {
-      localExamStore.appendViolation('blur');
+      appendViolation('blur');
       if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
         window.flutter_inappwebview
           .callHandler('ExambrowserBridge', 'violation', { type: 'blur' })
@@ -100,7 +89,7 @@ export default function App() {
       }
     };
     const onBeforeUnload = () => {
-      localExamStore.appendViolation('beforeunload');
+      appendViolation('beforeunload');
     };
 
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -120,44 +109,40 @@ export default function App() {
     } else if (window.ExambrowserBridge && window.ExambrowserBridge.showExitPasswordDialog) {
       window.ExambrowserBridge.showExitPasswordDialog();
     } else {
-      const pin = window.prompt('Masukkan Password Admin Keamanan untuk Keluar:');
-      if (pin === '12345' || pin === 'THHK2026') {
-        alert('Password Benar. Keluar dari Aplikasi Exambrowser.');
-        localExamStore.clearActiveSession();
-        setStudentSession(null);
-      } else if (pin) {
-        alert('Password Salah!');
-      }
+      // Tanpa wrapper native, browser biasa: tidak ada jalur keluar khusus.
+      // PIN keluar dikelola native (tidak ada nilai literal di repo).
+      alert('Keluar dari aplikasi dikelola oleh aplikasi Exambrowser.');
     }
   };
 
-  const [adminAuthPin, setAdminAuthPin] = useState('');
-  const [proctorRoomInput, setProctorRoomInput] = useState('Ruang 1');
-  const [activeProctorRoom, setActiveProctorRoom] = useState('Ruang 1');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [isAdminRole, setIsAdminRole] = useState(false); // true: Super Admin, false: Proctor
-
-  const handleAdminPinSubmit = (e) => {
+  const handleAdminPinSubmit = async (e) => {
     e.preventDefault();
+    setAdminError('');
     const trimmedPin = adminAuthPin.trim();
+    if (!trimmedPin) return;
 
-    if (trimmedPin === 'THHK2026' || trimmedPin === 'admin') {
-      setIsAdminAuthenticated(true);
-      setIsAdminRole(true); // Super Admin Role
-      setAdminAuthPin('');
-    } else if (trimmedPin === '12345') {
-      setIsAdminAuthenticated(true);
-      setIsAdminRole(false); // Proctor Role
-      setActiveProctorRoom(proctorRoomInput);
-      setAdminAuthPin('');
-    } else {
-      alert('PIN Salah!');
+    try {
+      const res = await verifyPin({ pin: trimmedPin, room: proctorRoomInput });
+      if (res?.ok) {
+        setIsAdminAuthenticated(true);
+        setIsAdminRole(res.role === 'admin');
+        // Simpan PIN di state (perlu untuk RPC berikutnya), bukan localStorage
+        setAdminPin(trimmedPin);
+        setActiveProctorRoom(proctorRoomInput);
+        setAdminAuthPin('');
+      } else {
+        setAdminError('PIN Salah!');
+      }
+    } catch (err) {
+      setAdminError(`PIN Salah! ${err.message || ''}`.trim());
     }
   };
 
-  const handleToggleTokenAccess = (isEnabled) => {
-    const updated = localExamStore.setTokenAccessEnabled(isEnabled);
-    setIsTokenAccessEnabled(updated);
+  const handleLogout = () => {
+    setIsAdminAuthenticated(false);
+    setIsAdminRole(false);
+    setAdminPin(null);
+    setAdminAuthPin('');
   };
 
   return (
@@ -174,19 +159,11 @@ export default function App() {
         {activeMode === 'student' && (
           <>
             {!studentSession ? (
-              <StudentTokenScreen
-                activeTokenObj={activeTokenObj}
-                activeExam={studentSession?.exam || activeExams[0]}
-                activeExams={activeExams}
-                onTokenValidated={(session) => setStudentSession(session)}
-              />
+              <StudentTokenScreen onTokenValidated={(session) => setStudentSession(session)} />
             ) : (
               <div className="flex flex-col h-[calc(100vh-56px)]">
-                <ExamTimerHeader
-                  studentInfo={studentSession}
-                  activeExam={studentSession?.exam || activeExams[0]}
-                />
-                <MobilePdfViewer pdfUrl={studentSession?.exam?.pdf_url || activeExams[0]?.pdf_url} />
+                <ExamTimerHeader studentInfo={studentSession} activeExam={studentSession?.exam} />
+                <MobilePdfViewer pdfUrl={studentSession?.exam?.pdf_url} />
               </div>
             )}
           </>
@@ -216,6 +193,11 @@ export default function App() {
                     onSubmit={handleAdminPinSubmit}
                     className="bg-console-panel border border-console-line rounded-xl p-5 space-y-3 shadow-panel"
                   >
+                    {adminError && (
+                      <div className="p-3 bg-bad/10 border border-bad/25 text-bad text-xs font-semibold rounded-lg">
+                        {adminError}
+                      </div>
+                    )}
                     <div>
                       <label className="block text-[10px] font-bold text-ink-muted uppercase tracking-label mb-1.5">
                         Pilih Ruang Ujian (Khusus Proktor)
@@ -256,7 +238,7 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-6 animate-fadeUp">
-                
+
                 {/* Mode Role Header Badge */}
                 <div className="flex items-center justify-between bg-console-panel border border-console-line rounded-xl px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -271,45 +253,36 @@ export default function App() {
                       </h4>
                       <p className="text-[10px] text-ink-muted">
                         {isAdminRole
-                          ? 'Akses penuh unggah PDF/Google Drive & kontrol saklar token 3 ruangan'
+                          ? 'Akses penuh input Link Google Drive & kontrol saklar token 3 ruangan'
                           : `Sesi pengawasan khusus ${activeProctorRoom} (Wajib Berita Acara)`}
                       </p>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => setIsAdminAuthenticated(false)}
+                    onClick={handleLogout}
                     className="text-[10px] font-bold uppercase tracking-wider text-bad border border-bad/30 hover:bg-bad/10 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     Keluar Admin
                   </button>
                 </div>
 
-                {/* SUPER ADMIN COMPONENT (Upload PDF / GDrive / Batch & Master Switch) */}
-                {isAdminRole && (
+                {/* SUPER ADMIN COMPONENT */}
+                {isAdminRole && adminPin && (
                   <>
-                    <StudentManager />
-                    <PdfUploader
-                      onExamCreated={handleExamCreated}
-                      isTokenAccessEnabled={isTokenAccessEnabled}
-                      onToggleTokenAccess={handleToggleTokenAccess}
-                      activeExamIds={activeExamIds}
-                      onToggleActiveExamId={handleToggleActiveExamId}
-                      activeExams={activeExams}
-                    />
+                    <StudentManager adminPin={adminPin} />
+                    <PdfUploader adminPin={adminPin} />
                   </>
                 )}
 
                 {/* PROCTOR & MONITOR COMPONENT */}
-                <ProctorTokenMonitor
-                  activeTokenObj={activeTokenObj}
-                  onTokenUpdate={(updatedObj) => setActiveTokenObj(updatedObj)}
-                  activeExam={activeExams[0]}
-                  activeExams={activeExams}
-                  isTokenAccessEnabled={isTokenAccessEnabled}
-                  isAdminRole={isAdminRole}
-                  proctorRoom={activeProctorRoom}
-                />
+                {adminPin && (
+                  <ProctorTokenMonitor
+                    adminPin={adminPin}
+                    isAdminRole={isAdminRole}
+                    proctorRoom={activeProctorRoom}
+                  />
+                )}
 
               </div>
             )}
