@@ -3,7 +3,7 @@
 -- Jalankan di: Supabase Dashboard -> SQL Editor -> New query
 --
 -- Cara pakai:
---   1. Ganti setiap 'PIN_SAAT_INI' dan 'PIN_BARU_...' dengan nilai asli.
+--   1. Ganti setiap 'PIN_SA_SAAT_INI' dan 'PIN_BARU_...' dengan nilai asli.
 --   2. Ganti PIN ruang dulu, PIN super admin paling akhir
 --      (karena set_room_pin butuh PIN super admin lama sebagai auth).
 --
