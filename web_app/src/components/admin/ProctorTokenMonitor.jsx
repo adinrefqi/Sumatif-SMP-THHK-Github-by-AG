@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle, FileSignature, ClipboardList, Lock, Edit3, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
+import { KeyRound, RefreshCw, Clock, Users, CheckCircle2, RotateCcw, AlertTriangle, FileSignature, ClipboardList, Lock, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
 import { getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
 import { releaseToken, currentToken, proctorDashboard, saveMinutes, isSupabaseConfigured } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
@@ -105,11 +105,11 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
     <div className="space-y-4">
 
       {/* Navigation Sub-Header Tabs */}
-      <div className="flex items-center justify-between bg-console-panel border border-console-line rounded-xl p-2 shadow-panel">
-        <div className="flex items-center gap-2">
+      <div className="bg-console-panel border border-console-line rounded-xl p-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab('token')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none ${
               activeTab === 'token'
                 ? 'bg-accent text-console-bg'
                 : 'text-ink-muted hover:text-ink hover:bg-console-faint'
@@ -121,7 +121,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
 
           <button
             onClick={() => setActiveTab('attendance')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none ${
               activeTab === 'attendance'
                 ? 'bg-accent text-console-bg'
                 : 'text-ink-muted hover:text-ink hover:bg-console-faint'
@@ -133,7 +133,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
 
           <button
             onClick={() => setActiveTab('minutes')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none ${
               activeTab === 'minutes'
                 ? 'bg-accent text-console-bg'
                 : 'text-ink-muted hover:text-ink hover:bg-console-faint'
@@ -145,7 +145,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
 
           <button
             onClick={() => setActiveTab('monitor')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none ${
               activeTab === 'monitor'
                 ? 'bg-accent text-console-bg'
                 : 'text-ink-muted hover:text-ink hover:bg-console-faint'
@@ -159,16 +159,6 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
             )}</span>
           </button>
         </div>
-
-        {!isAdminRole && (
-          <button
-            onClick={() => setShowMinutesForm(true)}
-            className="text-[11px] font-semibold text-accent-soft hover:underline flex items-center gap-1 px-2"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>Edit Berita Acara</span>
-          </button>
-        )}
       </div>
 
       {/* TAB 1: TOKEN & LIVE SESSION MONITOR */}
@@ -181,7 +171,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {/* Left: Token Box */}
             <div className="lg:col-span-1 bg-console-raised border border-console-line rounded-xl p-5 flex flex-col justify-between relative overflow-hidden">
@@ -240,7 +230,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
             </div>
 
             {/* Right: Live Attendance Summary */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="md:col-span-2 space-y-4">
               <div className="flex items-center justify-between border-b border-console-line pb-3">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-accent" />
@@ -387,7 +377,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                 <div className="p-3 bg-console-bg border border-console-line rounded-lg">
                   <span className="text-[10px] text-ink-faint uppercase font-bold">Terdaftar</span>
                   <p className="font-mono text-xl font-extrabold text-ink-strong mt-0.5">{officialMinutes.totalRegistered}</p>

@@ -229,7 +229,7 @@ export default function App() {
 
                     <button
                       type="submit"
-                      className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-[11px] uppercase tracking-widest rounded-lg transition-colors"
+                      className="w-full py-2.5 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg font-extrabold text-[11px] uppercase tracking-widest rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:outline-none"
                     >
                       Masuk Otorisasi Panel
                     </button>

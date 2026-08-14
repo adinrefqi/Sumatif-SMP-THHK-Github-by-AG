@@ -222,7 +222,7 @@ export default function StudentTokenScreen({ onTokenValidated }) {
 
           <button
             type="submit"
-            className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-xs font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 bg-accent hover:bg-accent-soft active:bg-accent-deep text-console-bg rounded-lg text-xs font-extrabold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-accent-soft focus-visible:outline-none"
           >
             <span>Mulai Buka Naskah Soal</span>
             <ArrowRight className="w-4 h-4" />

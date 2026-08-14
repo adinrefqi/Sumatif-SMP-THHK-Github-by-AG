@@ -164,7 +164,7 @@ export default function PdfUploader({ adminPin }) {
     <div className="space-y-6">
 
       {/* Super Admin Control Card: Master Token Release Switch */}
-      <div className="bg-console-raised border border-accent/30 rounded-xl p-5 shadow-panel flex items-center justify-between gap-4">
+      <div className="bg-console-panel border border-console-line rounded-xl p-5 shadow-panel flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${
             isTokenAccessEnabled

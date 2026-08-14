@@ -91,7 +91,7 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
           <div className="font-bold text-xs text-ink-strong truncate max-w-[130px] sm:max-w-[220px]">
             {studentInfo?.name || 'Siswa SMP THHK'}
           </div>
-          <div className="text-[9px] uppercase tracking-wider text-ink-faint font-semibold">
+          <div className="text-[10px] uppercase tracking-wider text-ink-muted font-semibold">
             Kelas {studentInfo?.class || '8'} • Exambrowser
           </div>
         </div>
@@ -111,8 +111,8 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
 
       {/* Right: Clock & Battery */}
       <div className="flex items-center gap-2">
-        <div className="hidden xs:flex flex-col items-end text-[9px] text-ink-faint font-mono leading-tight">
-          <span className="font-bold text-ink-muted tabular-nums">{realtimeClock}</span>
+        <div className="hidden sm:flex flex-col items-end text-[11px] text-ink-muted font-mono leading-tight">
+          <span className="font-bold text-ink tabular-nums">{realtimeClock}</span>
           <span className="flex items-center gap-1 text-ok">
             <Battery className="w-3 h-3" />
             <span className="tabular-nums">{batteryLevel}%</span>

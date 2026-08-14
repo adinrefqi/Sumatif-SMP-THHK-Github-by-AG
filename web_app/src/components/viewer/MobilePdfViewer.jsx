@@ -115,7 +115,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
   };
 
   const toolBtn =
-    'h-8 min-w-8 px-2 rounded-md bg-console-raised border border-console-line text-ink hover:bg-console-line active:bg-console-line/70 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:pointer-events-none';
+    'h-10 min-w-10 px-2 rounded-md bg-console-raised border border-console-line text-ink hover:bg-console-line active:bg-console-line/70 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none';
 
   return (
     <div className={`flex flex-col h-[calc(100vh-104px)] ${getContainerBg()} transition-colors duration-300`}>
@@ -130,6 +130,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             disabled={currentPage <= 1}
             className={toolBtn}
             title="Halaman Sebelumnya"
+            aria-label="Halaman Sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -143,6 +144,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             disabled={currentPage >= numPages}
             className={toolBtn}
             title="Halaman Selanjutnya"
+            aria-label="Halaman Selanjutnya"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -154,6 +156,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             onClick={() => setScale(s => Math.max(0.7, s - 0.2))}
             className={toolBtn}
             title="Kecilkan Teks (A-)"
+            aria-label="Kecilkan Teks"
           >
             A−
           </button>
@@ -162,6 +165,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             onClick={() => setScale(1.2)}
             className={`${toolBtn} hidden sm:flex`}
             title="Ukuran Standar (100%)"
+            aria-label="Ukuran Standar 100 persen"
           >
             100%
           </button>
@@ -170,6 +174,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             onClick={() => setScale(s => Math.min(2.5, s + 0.2))}
             className={toolBtn}
             title="Besarkan Teks (A+)"
+            aria-label="Besarkan Teks"
           >
             A+
           </button>
@@ -185,6 +190,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
                 : ''
             }`}
             title="Tandai Halaman Bacaan Stimulus ANBK"
+            aria-label="Tandai Halaman Bacaan"
           >
             {bookmarks.includes(currentPage) ? (
               <BookmarkCheck className="w-4 h-4 text-accent-soft fill-accent" />
@@ -202,6 +208,7 @@ export default function MobilePdfViewer({ pdfUrl }) {
             }}
             className={toolBtn}
             title="Ganti Mode Baca (Terang / Sepia / Gelap)"
+            aria-label="Ganti Mode Baca"
           >
             {readingMode === 'light' && <Sun className="w-4 h-4 text-accent-soft" />}
             {readingMode === 'sepia' && <Eye className="w-4 h-4 text-accent" />}
