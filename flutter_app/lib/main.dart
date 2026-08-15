@@ -46,6 +46,7 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
   static const String vercelExamUrl = "https://portal-sumatifthhk.vercel.app";
   bool _isViolationHandling = false;
   bool _isExitDialogOpen = false;
+  bool _isNormalExit = false;
   bool _kioskWatchActive = false;
   DateTime? _lastPausedAt;
   String? _currentSessionId;
@@ -85,23 +86,39 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
     // query of watchKioskMode() can still report "disabled" while pinning is
     // starting. Ignore events during the startup grace period to avoid a false
     // violation that kills the app right after launch.
-    // BYOD: we do NOT auto-kill anymore. Unpin is logged as a violation so the
-    // proctor/server can see it; the app stays alive to keep heartbeat running.
+    // Kebijakan: begitu sematan (LockTask) terlepas, aplikasi di-force close
+    // supaya siswa tidak bisa lanjut pakai aplikasi di luar mode kiosk.
     watchKioskMode().listen((mode) {
       if (!_kioskWatchActive) return;
-      if (mode == KioskMode.disabled &&
-          !_isExitDialogOpen &&
-          !_isViolationHandling) {
-        _violationLogService.appendViolation({
-          'type': 'kiosk_disabled',
-          'sessionId': _currentSessionId,
-          'studentId': _currentStudentId,
-        });
+      if (mode == KioskMode.disabled && !_isExitDialogOpen && !_isNormalExit) {
+        _forceCloseApp('kiosk_disabled');
       }
     });
     Timer(const Duration(seconds: 10), () {
       _kioskWatchActive = true;
     });
+  }
+
+  Future<void> _forceCloseApp(String type, [String detail = '']) async {
+    if (_isViolationHandling) return;
+    _isViolationHandling = true;
+
+    // Catat pelanggaran dulu (best effort) sebelum mematikan proses.
+    await _violationLogService.appendViolation({
+      'type': type,
+      'detail': detail,
+      'sessionId': _currentSessionId,
+      'studentId': _currentStudentId,
+    });
+
+    _securityService.stopSirenAlarm();
+    try {
+      await stopKioskMode();
+    } catch (_) {}
+    if (Platform.isAndroid) {
+      SystemNavigator.pop();
+    }
+    exit(0);
   }
 
   Future<void> _handleViolation(String type, [String detail = '']) async {
@@ -158,6 +175,7 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
       builder: (context) => ExitPasswordDialog(
         onSuccess: () async {
           _isExitDialogOpen = false;
+          _isNormalExit = true;
           // Normal exit, stop kiosk and exit smoothly without alarm
           await stopKioskMode();
           if (Platform.isAndroid) {
