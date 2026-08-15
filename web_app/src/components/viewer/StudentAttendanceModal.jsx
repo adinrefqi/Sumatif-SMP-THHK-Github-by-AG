@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { FileSignature, Eraser, CheckCircle2, User, ShieldCheck } from 'lucide-react';
-import { openExam, saveActiveSession } from '../../lib/supabase';
+import { openExam, saveActiveSession, examPdfUrl } from '../../lib/supabase';
 
 export default function StudentAttendanceModal({ studentInfo, examTitle, tokenInput, selectedRoom, onConfirm }) {
   const canvasRef = useRef(null);
@@ -103,18 +103,21 @@ export default function StudentAttendanceModal({ studentInfo, examTitle, tokenIn
         token: tokenInput || studentInfo.tokenEntered,
         examId: studentInfo.chosenExam?.id,
         signature: signatureDataUrl,
+        secretCode: studentInfo.secretCode,
       });
 
       // Persist sesi aktif untuk heartbeat & violation (identitas ringan)
       saveActiveSession({
         sessionId: opened.session_id,
         studentId: studentInfo.nisn,
+        nisn: studentInfo.nisn,
         name: studentInfo.name,
         className: studentInfo.class,
         room: selectedRoom || studentInfo.room,
         examId: studentInfo.chosenExam?.id || null,
         subject: studentInfo.chosenExam?.subject || null,
         startedAt: Date.now(),
+        expiresAt: opened.expires_at,
         examDurationMinutes: opened.duration_minutes || studentInfo.chosenExam?.duration_minutes || 90,
       });
 
@@ -124,8 +127,9 @@ export default function StudentAttendanceModal({ studentInfo, examTitle, tokenIn
         sessionId: opened.session_id,
         exam: {
           ...studentInfo.chosenExam,
-          pdf_url: opened.pdf_url,
+          pdf_url: examPdfUrl({ sessionId: opened.session_id }),
           duration_minutes: opened.duration_minutes || studentInfo.chosenExam?.duration_minutes,
+          expires_at: opened.expires_at,
           title: opened.title || studentInfo.chosenExam?.title,
         },
         timestamp: new Date().toISOString(),

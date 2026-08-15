@@ -3,7 +3,13 @@ import { Clock, Battery, User } from 'lucide-react';
 import { heartbeat, getActiveSession } from '../../lib/supabase';
 
 export default function ExamTimerHeader({ studentInfo, activeExam }) {
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState((studentInfo?.exam?.duration_minutes || activeExam?.duration_minutes || 90) * 60);
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState(() => {
+    const expiresAt = studentInfo?.exam?.expires_at || activeExam?.expires_at;
+    if (expiresAt) {
+      return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+    }
+    return (studentInfo?.exam?.duration_minutes || activeExam?.duration_minutes || 90) * 60;
+  });
   const [realtimeClock, setRealtimeClock] = useState('');
   const [batteryLevel, setBatteryLevel] = useState(85);
   const lastHeartbeatRef = useRef(0);
@@ -32,9 +38,9 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
     const sendHeartbeat = async () => {
       const session = getActiveSession();
       const now = Date.now();
-      if (session?.sessionId) {
+      if (session?.sessionId && session?.nisn) {
         try {
-          await heartbeat(session.sessionId);
+          await heartbeat(session.sessionId, session.nisn);
         } catch (e) {
           console.error("Heartbeat gagal", e);
         }
@@ -51,7 +57,13 @@ export default function ExamTimerHeader({ studentInfo, activeExam }) {
     };
 
     const timer = setInterval(() => {
-      setTimeLeftSeconds(prev => (prev > 0 ? prev - 1 : 0));
+      const expiresAt = studentInfo?.exam?.expires_at || activeExam?.expires_at;
+      if (expiresAt) {
+        const remaining = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
+        setTimeLeftSeconds(remaining > 0 ? remaining : 0);
+      } else {
+        setTimeLeftSeconds(prev => (prev > 0 ? prev - 1 : 0));
+      }
 
       const now = new Date();
       setRealtimeClock(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));

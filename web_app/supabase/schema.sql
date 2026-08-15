@@ -5,32 +5,51 @@
 -- Supabase Dashboard → SQL Editor:
 --   1. migrations/000_emergency_lockdown.sql   (Fase 0)
 --   2. migrations/001_server_authority.sql     (Fase 1)
+--   3. migrations/001b_rls_force_and_rpc_fix.sql
+--   4. migrations/003_wave1_fixes.sql          (Gelombang 1: #1, #2, #3, #8)
+--   5. migrations/004_wave2_fixes.sql          (Gelombang 2: #5 open_exam tanpa pdf_url)
+--   6. migrations/005_wave3_fixes.sql          (Gelombang 3: #7 log_violation, #9 expires_at)
 --
--- Setelah Fase 1, TIDAK ada policy anon pada tabel apa pun kecuali
--- violation_logs (insert-only). Semua akses lewat RPC security definer
--- yang menerima PIN sebagai argumen (tanpa JWT).
+-- Setelah Gelombang 1, TIDAK ada policy anon pada tabel apa pun kecuali
+-- violation_logs (insert-only). Semua akses lewat RPC security definer.
+-- Panel (proktor/admin) memakai token sesi (panel_sessions), bukan PIN
+-- tiap request. Siswa memakai token + kode peserta (secret_code).
 -- ============================================================
 
 -- Prasyarat tabel dibuat melalui migrations/001_server_authority.sql.
 -- File ini adalah referensi skema akhir untuk dokumentasi & setup baru.
 
--- Ringkasan tabel (dibuat oleh 001_server_authority.sql):
+-- Ringkasan tabel:
 --   exams               — bank soal (rename dari exam_sessions), kolom is_active
 --   exam_tokens         — token aktif per ruang (rotasi 15 menit, server)
---   room_pins           — PIN per ruang + super_admin, ter-hash bcrypt
---   attendance          — presensi + TTD siswa (unique nisn+exam_id)
---   student_sessions    — sesi live siswa (heartbeat)
+--   room_pins           — PIN per ruang + super_admin + exit, ter-hash bcrypt
+--   attendance          — presensi + TTD siswa (unique nisn+exam_id, append-only)
+--   student_sessions    — sesi live siswa (heartbeat + validasi nisn)
 --   official_minutes    — berita acara per ruang (jsonb)
 --   app_settings        — saklar master (token_access_enabled)
---   students            — roster siswa (dari Fase 0, tetap)
+--   students            — roster siswa (+ secret_code 4 karakter)
 --   violation_logs      — log pelanggaran (insert-only anon, tanpa baca)
+--   panel_sessions      — token sesi panel (pengganti PIN tiap request)
+--   pin_attempts        — rate-limit global percobaan PIN
+--   attendance_audit    — audit append-only panggilan open_exam
 
 -- RPC yang tersedia (semua security definer, grant execute ke anon):
---   Jalur siswa:   check_token, open_exam, heartbeat
---   Jalur panel:   verify_pin, release_token, current_token,
---                  proctor_dashboard, save_minutes
---   Admin:         admin_list_exams, admin_upsert_exam, admin_delete_exam,
---                  admin_set_active_exams, admin_list_students,
---                  admin_add_student, admin_bulk_add_students,
---                  admin_delete_student, toggle_token_access,
---                  get_token_access, set_room_pin
+--   Jalur siswa:   check_token(nisn, room, token, secret_code),
+--                  open_exam(nisn, room, token, exam_id, signature, secret_code)
+--                  -> TANPA pdf_url (lihat Edge Function exam-pdf),
+--                  heartbeat(session_id, nisn)
+--   Jalur exit:    verify_exit_pin(pin)
+--   Jalur panel:   verify_pin(pin, room) -> token sesi,
+--                  logout_panel(token),
+--                  release_token(token, room), current_token(token, room),
+--                  proctor_dashboard(token, room), save_minutes(token, room, data)
+--   Admin:         admin_list_exams(token), admin_upsert_exam(token, exam),
+--                  admin_delete_exam(token, exam_id),
+--                  admin_set_active_exams(token, exam_ids),
+--                  admin_list_students(token),
+--                  admin_add_student(token, ...),
+--                  admin_bulk_add_students(token, students),
+--                  admin_delete_student(token, nisn),
+--                  reset_student_session(token, nisn, exam_id),
+--                  toggle_token_access(token, enabled),
+--                  get_token_access(token), set_room_pin(token, room, new_pin)

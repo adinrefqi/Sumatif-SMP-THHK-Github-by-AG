@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ClipboardList, CheckCircle2 } from 'lucide-react';
 import { saveMinutes } from '../../lib/supabase';
 
-export default function OfficialMinutesForm({ proctorRoom, adminPin, onSubmitted }) {
+export default function OfficialMinutesForm({ proctorRoom, adminToken, onSubmitted }) {
   const roomInitial = proctorRoom || 'Ruang 1';
 
   const [proctorName, setProctorName] = useState('');
@@ -35,7 +35,7 @@ export default function OfficialMinutesForm({ proctorRoom, adminPin, onSubmitted
     };
 
     try {
-      const res = await saveMinutes({ pin: adminPin, room: roomNumber, data: payload });
+      const res = await saveMinutes({ token: adminToken, room: roomNumber, data: payload });
       if (onSubmitted) {
         onSubmitted(payload);
       }

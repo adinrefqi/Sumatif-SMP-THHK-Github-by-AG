@@ -16,7 +16,7 @@ void main() {
 }
 
 class ExambrowserApp extends StatelessWidget {
-  const ExambrowserApp({Key? key}) : super(key: key);
+  const ExambrowserApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class ExambrowserApp extends StatelessWidget {
 }
 
 class ExamScreen extends StatefulWidget {
-  const ExamScreen({Key? key}) : super(key: key);
+  const ExamScreen({super.key});
 
   @override
   State<ExamScreen> createState() => _ExamScreenState();
@@ -199,7 +199,19 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
               domStorageEnabled: true,
               isElementFullscreenEnabled: true,
               supportZoom: false,
+              javaScriptCanOpenWindowsAutomatically: false,
             ),
+            // #6 Allowlist URL: kiosk hanya boleh navigasi ke portal ujian.
+            // iframe Google Drive / window baru diblokir, jadi siswa tidak
+            // bisa keluar ke internet lewat UI Drive di dalam WebView.
+            shouldOverrideUrlLoading: (controller, action) async {
+              final host = action.request.url?.host ?? '';
+              const allowed = {'portal-sumatifthhk.vercel.app'};
+              return allowed.contains(host)
+                  ? NavigationActionPolicy.ALLOW
+                  : NavigationActionPolicy.CANCEL;
+            },
+            onCreateWindow: (controller, createWindowAction) async => false,
             onWebViewCreated: (controller) {
               _webViewController = controller;
               

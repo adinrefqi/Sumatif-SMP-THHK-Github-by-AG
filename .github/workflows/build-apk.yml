@@ -62,9 +62,14 @@ jobs:
           flutter pub get
 
       - name: Build Flutter APK
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         run: |
           cd flutter_app
-          flutter build apk --release --no-tree-shake-icons
+          flutter build apk --release --no-tree-shake-icons \
+            --dart-define=SUPABASE_URL="${VITE_SUPABASE_URL:-https://sksdgnsqzazmwzboofch.supabase.co}" \
+            --dart-define=SUPABASE_ANON_KEY="${VITE_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrc2RnbnNxemF6bXd6Ym9vZmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NDYxNzgsImV4cCI6MjEwMjEyMjE3OH0.0rbDHxv7XsYoMjc9JPPAbHhgn-hU5wttYCHqFDJLJ9I}"
           cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/SMP-THHK-Exambrowser.apk
 
       - name: Upload Flutter APK Artifact

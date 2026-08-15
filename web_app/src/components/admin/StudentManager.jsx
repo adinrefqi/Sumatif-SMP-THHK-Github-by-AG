@@ -8,7 +8,7 @@ import { adminListStudents, adminAddStudent, adminBulkAddStudents, adminDeleteSt
 const ROOMS = ['Ruang 1', 'Ruang 2', 'Ruang 3'];
 const CLASSES = ['7', '8', '9'];
 
-export default function StudentManager({ adminPin }) {
+export default function StudentManager({ adminToken }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
@@ -26,7 +26,7 @@ export default function StudentManager({ adminPin }) {
   const loadStudents = async () => {
     setLoading(true);
     try {
-      const list = await adminListStudents(adminPin);
+      const list = await adminListStudents(adminToken);
       setStudents(Array.isArray(list) ? list : []);
     } catch (err) {
       setMessage({ type: 'error', text: `Gagal memuat daftar siswa: ${err.message || 'Terjadi kesalahan'}` });
@@ -38,7 +38,7 @@ export default function StudentManager({ adminPin }) {
   useEffect(() => {
     loadStudents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminPin]);
+  }, [adminToken]);
 
   // ---- CSV parsing ----
   const parseCsv = (text) => {
@@ -70,7 +70,7 @@ export default function StudentManager({ adminPin }) {
         setMessage({ type: 'error', text: 'CSV kosong atau format salah. Gunakan kolom: nisn, name, class, room' });
         return;
       }
-      await adminBulkAddStudents(adminPin, rows);
+      await adminBulkAddStudents(adminToken, rows);
       setMessage({
         type: 'success',
         text: `Berhasil mengimpor ${rows.length} siswa dari CSV.`
@@ -100,7 +100,7 @@ export default function StudentManager({ adminPin }) {
       return;
     }
     try {
-      await adminAddStudent(adminPin, { nisn: nisn.trim(), name: name.trim(), class: classVal, room: roomVal });
+      await adminAddStudent(adminToken, { nisn: nisn.trim(), name: name.trim(), class: classVal, room: roomVal });
       setMessage({ type: 'success', text: `Siswa ${name.trim()} berhasil ditambahkan.` });
       setNisn('');
       setName('');
@@ -113,7 +113,7 @@ export default function StudentManager({ adminPin }) {
   const handleDelete = async (nisnToDelete, studentName) => {
     if (!window.confirm(`Hapus siswa ${studentName} (NISN ${nisnToDelete})?`)) return;
     try {
-      await adminDeleteStudent(adminPin, nisnToDelete);
+      await adminDeleteStudent(adminToken, nisnToDelete);
       setMessage({ type: 'success', text: `Siswa ${studentName} dihapus.` });
       await loadStudents();
     } catch (err) {
@@ -281,6 +281,7 @@ export default function StudentManager({ adminPin }) {
                 <th className="py-2.5 px-3">Nama</th>
                 <th className="py-2.5 px-3">Kelas</th>
                 <th className="py-2.5 px-3">Ruang</th>
+                <th className="py-2.5 px-3">Kode Peserta</th>
                 <th className="py-2.5 px-3 text-center">Aksi</th>
               </tr>
             </thead>
@@ -291,6 +292,7 @@ export default function StudentManager({ adminPin }) {
                   <td className="py-2 px-3 font-bold text-ink-strong">{s.name}</td>
                   <td className="py-2 px-3 text-accent font-bold">{s.class}</td>
                   <td className="py-2 px-3 text-ink-muted">{s.room}</td>
+                  <td className="py-2 px-3 font-mono font-bold text-accent-soft">{s.secret_code || '-'}</td>
                   <td className="py-2 px-3 text-center">
                     <button
                       onClick={() => handleDelete(s.nisn, s.name)}

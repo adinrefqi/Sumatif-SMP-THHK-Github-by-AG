@@ -7,6 +7,7 @@ import StudentAttendanceModal from './StudentAttendanceModal';
 export default function StudentTokenScreen({ onTokenValidated }) {
   const [studentName, setStudentName] = useState('');
   const [nisn, setNisn] = useState('');
+  const [secretCode, setSecretCode] = useState('');
   const [studentClass, setStudentClass] = useState('8');
   const [selectedRoom, setSelectedRoom] = useState('Ruang 1');
   const [selectedExamId, setSelectedExamId] = useState('');
@@ -37,11 +38,16 @@ export default function StudentTokenScreen({ onTokenValidated }) {
       setErrorMsg('NISN wajib diisi untuk verifikasi kehadiran');
       return;
     }
+    const secretCodeValue = (secretCode || '').trim();
+    if (!secretCodeValue) {
+      setErrorMsg('Kode Peserta wajib diisi (ada di kartu peserta Anda)');
+      return;
+    }
 
     try {
-      const res = await checkToken({ nisn: nisnValue, room: selectedRoom, token: inputToken });
+      const res = await checkToken({ nisn: nisnValue, room: selectedRoom, token: inputToken, secretCode: secretCodeValue });
       if (!res?.ok) {
-        setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
+        setErrorMsg('Data peserta atau token tidak valid. Mintalah token terbaru dari Proktor/Pengawas.');
         return;
       }
 
@@ -55,6 +61,7 @@ export default function StudentTokenScreen({ onTokenValidated }) {
       setValidatedInfo({
         name: studentName,
         nisn: nisnValue,
+        secretCode: secretCodeValue,
         class: res.class || studentClass,
         room: selectedRoom,
         tokenEntered: inputToken.toUpperCase(),
@@ -62,9 +69,8 @@ export default function StudentTokenScreen({ onTokenValidated }) {
       });
     } catch (err) {
       const msg = err?.message || '';
-      if (msg.includes('NISN')) setErrorMsg(msg);
-      else if (msg.includes('Ruang')) setErrorMsg(msg);
-      else setErrorMsg('Token Ujian tidak valid atau telah kadaluarsa. Mintalah token terbaru dari Proktor/Pengawas.');
+      if (msg.includes('Peserta')) setErrorMsg(msg);
+      else setErrorMsg('Data peserta atau token tidak valid. Mintalah token terbaru dari Proktor/Pengawas.');
     }
   };
 
@@ -178,6 +184,21 @@ export default function StudentTokenScreen({ onTokenValidated }) {
                 <option value="9">Kelas 9</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-accent uppercase tracking-label mb-1.5">
+              Kode Peserta (4 Karakter) *
+            </label>
+            <input
+              type="text"
+              maxLength={4}
+              required
+              value={secretCode}
+              onChange={(e) => setSecretCode(e.target.value.toUpperCase())}
+              placeholder="Kode di kartu peserta"
+              className="w-full px-4 py-2.5 bg-console-faint border border-console-line rounded-lg text-center font-mono text-lg font-bold tracking-[0.25em] text-accent-soft placeholder:text-ink-faint focus:border-accent/60 focus:ring-1 focus:ring-accent/40 outline-none uppercase transition"
+            />
           </div>
 
           {/* Exam Selector from server response */}

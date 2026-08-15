@@ -42,3 +42,6 @@ key.properties
 Thumbs.db
 .vscode/
 .idea/
+
+# Command Code taste (bisa memuat nilai rahasia; jangan di-commit)
+.commandcode/taste/

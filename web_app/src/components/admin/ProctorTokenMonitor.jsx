@@ -4,12 +4,13 @@ import { getTimeRemainingInTokenCycle } from '../../utils/tokenRotationManager';
 import { releaseToken, currentToken, proctorDashboard, saveMinutes, isSupabaseConfigured } from '../../lib/supabase';
 import OfficialMinutesForm from './OfficialMinutesForm';
 
-export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom = 'Ruang 1' }) {
+export default function ProctorTokenMonitor({ adminToken, isAdminRole, proctorRoom = 'Ruang 1' }) {
   const [activeTab, setActiveTab] = useState('token'); // 'token' | 'attendance' | 'minutes' | 'monitor'
   const [officialMinutes, setOfficialMinutes] = useState(null);
   const [showMinutesForm, setShowMinutesForm] = useState(!isAdminRole);
   const [attendanceList, setAttendanceList] = useState([]);
   const [violations, setViolations] = useState([]);
+  const [violationSummary, setViolationSummary] = useState([]);
   const [liveSessions, setLiveSessions] = useState([]);
 
   const filteredAttendance = proctorRoom ? attendanceList.filter(r => r.room === proctorRoom) : attendanceList;
@@ -22,19 +23,20 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
 
   // Load dashboard on mount & room change
   useEffect(() => {
-    if (!adminPin) return;
+    if (!adminToken) return;
     let cancelled = false;
 
     const load = async () => {
       try {
         const [dash, tok] = await Promise.all([
-          proctorDashboard({ pin: adminPin, room: proctorRoom }),
-          currentToken({ pin: adminPin, room: proctorRoom }),
+          proctorDashboard({ token: adminToken, room: proctorRoom }),
+          currentToken({ token: adminToken, room: proctorRoom }),
         ]);
         if (cancelled) return;
         if (dash) {
           setAttendanceList(dash.attendance || []);
           setViolations(dash.violations || []);
+          setViolationSummary(dash.violation_summary || []);
           setLiveSessions(dash.sessions || []);
           setOfficialMinutes(dash.minutes && dash.minutes !== null ? dash.minutes : null);
         }
@@ -54,7 +56,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
     load();
     const interval = setInterval(load, 10000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [adminPin, proctorRoom]);
+  }, [adminToken, proctorRoom]);
 
   // Interval timer for 15-min countdown
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
     setIsReleasing(true);
     setTokenError('');
     try {
-      const res = await releaseToken({ pin: adminPin, room: proctorRoom });
+      const res = await releaseToken({ token: adminToken, room: proctorRoom });
       setTokenInfo({ token: res.token, created_at: res.created_at });
       setTimeInfo(getTimeRemainingInTokenCycle(new Date(res.created_at).getTime()));
     } catch (err) {
@@ -95,7 +97,7 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
     return (
       <OfficialMinutesForm
         proctorRoom={proctorRoom}
-        adminPin={adminPin}
+        adminToken={adminToken}
         onSubmitted={handleMinutesSubmitted}
       />
     );
@@ -449,12 +451,14 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
                         <th className="py-2.5 px-3">NISN / Siswa</th>
                         <th className="py-2.5 px-3">Mapel</th>
                         <th className="py-2.5 px-3">Terakhir Aktif</th>
+                        <th className="py-2.5 px-3">Batas Waktu</th>
                         <th className="py-2.5 px-3">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-console-line">
                       {liveSessions.map((s) => {
                         const lastSeen = s.last_seen_at ? new Date(s.last_seen_at) : null;
+                        const expiresAt = s.expires_at ? new Date(s.expires_at) : null;
                         const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 2 * 60 * 1000;
                         return (
                           <tr key={s.id} className="hover:bg-console-faint/50">
@@ -462,6 +466,9 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
                             <td className="py-2 px-3 text-accent font-semibold">{s.exam_id || '-'}</td>
                             <td className="py-2 px-3 text-ink-faint font-mono">
                               {lastSeen ? lastSeen.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                            </td>
+                            <td className="py-2 px-3 text-ink-faint font-mono">
+                              {expiresAt ? expiresAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
                             </td>
                             <td className="py-2 px-3">
                               {isOnline ? (
@@ -489,10 +496,47 @@ export default function ProctorTokenMonitor({ adminPin, isAdminRole, proctorRoom
             <div>
               <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-bad" />
-                <span>Catatan Pelanggaran Terdeteksi ({violations.length})</span>
+                <span>Ringkasan Pelanggaran per Siswa</span>
+              </h4>
+              {violationSummary.length === 0 ? (
+                <p className="text-xs text-ok italic py-3">Tidak ada pelanggaran terdeteksi. Semua siswa fokus mengerjakan ujian. 👍</p>
+              ) : (
+                <div className="overflow-x-auto border border-console-line rounded-xl mb-6">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-console-line text-[10px] uppercase font-bold text-ink-muted bg-console-panel">
+                        <th className="py-2.5 px-3">NISN</th>
+                        <th className="py-2.5 px-3">Jumlah</th>
+                        <th className="py-2.5 px-3">Terakhir</th>
+                        <th className="py-2.5 px-3">Waktu</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-console-line">
+                      {violationSummary.map((v) => (
+                        <tr key={v.student_id} className="hover:bg-console-faint/50">
+                          <td className="py-2 px-3 font-bold text-ink-strong font-mono">{v.student_id}</td>
+                          <td className="py-2 px-3">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${v.count >= 10 ? 'bg-bad/20 text-bad border border-bad/30' : 'bg-accent/10 text-accent border border-accent/25'}`}>
+                              {v.count}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-ink-muted">{(v.last_type || '').replace(/_/g, ' ')}</td>
+                          <td className="py-2 px-3 text-ink-faint font-mono">
+                            {v.last_at ? new Date(v.last_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <h4 className="font-extrabold text-xs text-ink-strong uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-bad" />
+                <span>Catatan Pelanggaran Terbaru ({violations.length})</span>
               </h4>
               {violations.length === 0 ? (
-                <p className="text-xs text-ok italic py-3">Tidak ada pelanggaran terdeteksi. Semua siswa fokus mengerjakan ujian. 👍</p>
+                <p className="text-xs text-ok italic py-3">Tidak ada catatan pelanggaran terbaru.</p>
               ) : (
                 <div className="overflow-x-auto border border-console-line rounded-xl">
                   <table className="w-full text-left text-xs">

@@ -8,9 +8,8 @@ import {
   adminUpsertExam, adminDeleteExam, adminListExams, adminSetActiveExams,
   toggleTokenAccess, getTokenAccess
 } from '../../lib/supabase';
-import MobilePdfViewer from '../viewer/MobilePdfViewer';
 
-export default function PdfUploader({ adminPin }) {
+export default function PdfUploader({ adminToken }) {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('Bahasa Indonesia');
   const [grade, setGrade] = useState('Kelas 8');
@@ -31,7 +30,7 @@ export default function PdfUploader({ adminPin }) {
 
   const reloadExams = async () => {
     try {
-      const list = await adminListExams(adminPin);
+      const list = await adminListExams(adminToken);
       const exams = Array.isArray(list) ? list : [];
       setSavedExams(exams);
       setActiveExamIds(exams.filter(e => e.is_active).map(e => e.id));
@@ -44,13 +43,13 @@ export default function PdfUploader({ adminPin }) {
 
   useEffect(() => {
     reloadExams();
-    getTokenAccess(adminPin)
+    getTokenAccess(adminToken)
       .then((res) => {
         if (res && typeof res.enabled === 'boolean') setIsTokenAccessEnabled(res.enabled);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminPin]);
+  }, [adminToken]);
 
   const convertGDriveUrl = (urlStr) => {
     if (!urlStr) return '';
@@ -90,13 +89,13 @@ export default function PdfUploader({ adminPin }) {
         is_active: true, // langsung aktif saat diterbitkan
       };
 
-      const res = await adminUpsertExam(adminPin, newExam);
+      const res = await adminUpsertExam(adminToken, newExam);
       const createdId = res?.id;
 
       // Aktifkan ujian ini di server (set aktif semua, termasuk yang baru)
       const current = await reloadExams();
       const ids = [...new Set([...current.map(x => x.id).filter(id => activeExamIds.includes(id)), createdId].filter(Boolean))];
-      await adminSetActiveExams(adminPin, ids);
+      await adminSetActiveExams(adminToken, ids);
       await reloadExams();
 
       setMessage({ type: 'success', text: 'Naskah soal berhasil diterbitkan & disinkronkan ke sistem.' });
@@ -126,7 +125,7 @@ export default function PdfUploader({ adminPin }) {
   const handleDeleteExam = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus naskah soal ini dari Bank Soal Master?')) {
       try {
-        await adminDeleteExam(adminPin, id);
+        await adminDeleteExam(adminToken, id);
         await reloadExams();
       } catch (err) {
         setMessage({ type: 'error', text: `Gagal menghapus: ${err.message || 'Terjadi kesalahan'}` });
@@ -139,7 +138,7 @@ export default function PdfUploader({ adminPin }) {
       ? activeExamIds.filter(id => id !== examId)
       : [...activeExamIds, examId];
     try {
-      await adminSetActiveExams(adminPin, next);
+      await adminSetActiveExams(adminToken, next);
       setActiveExamIds(next);
     } catch (err) {
       setMessage({ type: 'error', text: `Gagal mengubah status aktif: ${err.message || 'Terjadi kesalahan'}` });
@@ -149,7 +148,7 @@ export default function PdfUploader({ adminPin }) {
   const handleToggleTokenAccess = async () => {
     try {
       const next = !isTokenAccessEnabled;
-      await toggleTokenAccess(adminPin, next);
+      await toggleTokenAccess(adminToken, next);
       setIsTokenAccessEnabled(next);
     } catch (err) {
       setMessage({ type: 'error', text: `Gagal mengubah saklar token: ${err.message || 'Terjadi kesalahan'}` });
@@ -482,8 +481,15 @@ export default function PdfUploader({ adminPin }) {
 
             {/* Main Preview Container */}
             <div className="flex-1 bg-console-bg p-3 md:p-4 overflow-hidden flex flex-col justify-center">
-              <div className="w-full h-full max-w-3xl mx-auto border border-console-line rounded-xl overflow-hidden shadow-2xl flex flex-col">
-                <MobilePdfViewer pdfUrl={testPdfUrl} />
+              <div className="w-full h-full max-w-3xl mx-auto border border-console-line rounded-xl overflow-hidden shadow-2xl flex flex-col bg-white">
+                {/* Pratinjau khusus Super Admin memakai iframe Drive langsung.
+                    Siswa TIDAK pernah melihat URL ini; render siswa lewat proxy exam-pdf. */}
+                <iframe
+                  src={testPdfUrl || 'about:blank'}
+                  title="Pratinjau Naskah Super Admin"
+                  className="w-full h-full min-h-[500px] border-0"
+                  allow="autoplay"
+                />
               </div>
             </div>
 

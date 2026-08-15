@@ -2,23 +2,41 @@
 -- GANTI PIN (TEMPLATE — isi nilai sebelum dijalankan)
 -- Jalankan di: Supabase Dashboard -> SQL Editor -> New query
 --
--- Cara pakai:
---   1. Ganti setiap 'PIN_SA_SAAT_INI' dan 'PIN_BARU_...' dengan nilai asli.
---   2. Ganti PIN ruang dulu, PIN super admin paling akhir
---      (karena set_room_pin butuh PIN super admin lama sebagai auth).
+-- Catatan penting (berubah sejak Gelombang 1):
+--   File ini mengubah langsung tabel room_pins (bcrypt), TIDAK lewat
+--   set_room_pin, karena set_room_pin sekarang butuh token sesi panel.
+--   SQL Editor berjalan sebagai superuser, jadi update langsung aman.
 --
--- Syarat PIN baru: minimal 8 karakter, acak, jangan mudah ditebak.
--- JANGAN commit nilai PIN asli ke repo.
+-- Cara pakai:
+--   1. Ganti setiap 'PIN_BARU_...' dengan nilai asli.
+--   2. PIN baru wajib min 12 karakter, campur huruf & angka, tidak mudah ditebak.
+--   3. JANGAN commit nilai PIN asli ke repo. Setelah selesai, kembalikan
+--      placeholder ke file ini sebelum commit.
 -- ============================================================
 
--- 1. Ruang 1
-select public.set_room_pin('PIN_SA_SAAT_INI', 'Ruang 1', 'PIN_BARU_RUANG_1');
+create extension if not exists pgcrypto;
 
--- 2. Ruang 2
-select public.set_room_pin('PIN_SA_SAAT_INI', 'Ruang 2', 'PIN_BARU_RUANG_2');
+-- 1. Exit password kiosk
+update public.room_pins
+set pin_hash = crypt('PIN_BARU_EXIT', gen_salt('bf')), updated_at = now()
+where room = 'exit';
 
--- 3. Ruang 3
-select public.set_room_pin('PIN_SA_SAAT_INI', 'Ruang 3', 'PIN_BARU_RUANG_3');
+-- 2. Ruang 1
+update public.room_pins
+set pin_hash = crypt('PIN_BARU_RUANG_1', gen_salt('bf')), updated_at = now()
+where room = 'Ruang 1';
 
--- 4. Super Admin (TERAKHIR)
-select public.set_room_pin('PIN_SA_SAAT_INI', 'super_admin', 'PIN_BARU_SUPER_ADMIN');
+-- 3. Ruang 2
+update public.room_pins
+set pin_hash = crypt('PIN_BARU_RUANG_2', gen_salt('bf')), updated_at = now()
+where room = 'Ruang 2';
+
+-- 4. Ruang 3
+update public.room_pins
+set pin_hash = crypt('PIN_BARU_RUANG_3', gen_salt('bf')), updated_at = now()
+where room = 'Ruang 3';
+
+-- 5. Super Admin
+update public.room_pins
+set pin_hash = crypt('PIN_BARU_SUPER_ADMIN', gen_salt('bf')), updated_at = now()
+where room = 'super_admin';

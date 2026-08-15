@@ -8,7 +8,7 @@ import StudentTokenScreen from './components/viewer/StudentTokenScreen';
 import MobilePdfViewer from './components/viewer/MobilePdfViewer';
 import ExamTimerHeader from './components/viewer/ExamTimerHeader';
 import OfflineFallbackModal from './components/viewer/OfflineFallbackModal';
-import { getActiveSession, appendViolation, clearActiveSession, verifyPin } from './lib/supabase';
+import { getActiveSession, appendViolation, clearActiveSession, verifyPin, logoutPanel } from './lib/supabase';
 import { Lock, ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function App() {
@@ -18,7 +18,7 @@ export default function App() {
   const [showOfflineModal, setShowOfflineModal] = useState(false);
 
   const [adminAuthPin, setAdminAuthPin] = useState('');
-  const [adminPin, setAdminPin] = useState(null); // PIN tersimpan di state React (bukan localStorage)
+  const [adminToken, setAdminToken] = useState(null); // token sesi panel (bukan PIN)
   const [proctorRoomInput, setProctorRoomInput] = useState('Ruang 1');
   const [activeProctorRoom, setActiveProctorRoom] = useState('Ruang 1');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -123,11 +123,11 @@ export default function App() {
 
     try {
       const res = await verifyPin({ pin: trimmedPin, room: proctorRoomInput });
-      if (res?.ok) {
+      if (res?.ok && res?.token) {
         setIsAdminAuthenticated(true);
         setIsAdminRole(res.role === 'admin');
-        // Simpan PIN di state (perlu untuk RPC berikutnya), bukan localStorage
-        setAdminPin(trimmedPin);
+        // Simpan token sesi di state (bukan PIN, bukan localStorage)
+        setAdminToken(res.token);
         setActiveProctorRoom(proctorRoomInput);
         setAdminAuthPin('');
       } else {
@@ -138,11 +138,15 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = adminToken;
     setIsAdminAuthenticated(false);
     setIsAdminRole(false);
-    setAdminPin(null);
+    setAdminToken(null);
     setAdminAuthPin('');
+    if (token) {
+      try { await logoutPanel(token); } catch (e) {}
+    }
   };
 
   return (
@@ -268,17 +272,17 @@ export default function App() {
                 </div>
 
                 {/* SUPER ADMIN COMPONENT */}
-                {isAdminRole && adminPin && (
+                {isAdminRole && adminToken && (
                   <>
-                    <StudentManager adminPin={adminPin} />
-                    <PdfUploader adminPin={adminPin} />
+                    <StudentManager adminToken={adminToken} />
+                    <PdfUploader adminToken={adminToken} />
                   </>
                 )}
 
                 {/* PROCTOR & MONITOR COMPONENT */}
-                {adminPin && (
+                {adminToken && (
                   <ProctorTokenMonitor
-                    adminPin={adminPin}
+                    adminToken={adminToken}
                     isAdminRole={isAdminRole}
                     proctorRoom={activeProctorRoom}
                   />

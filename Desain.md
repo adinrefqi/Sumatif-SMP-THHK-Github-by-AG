@@ -32,11 +32,10 @@ graph TD
 - **`components/viewer/StudentTokenScreen.jsx`**: Form konfirmasi data peserta & masukan Token Ujian 6-karakter.
 - **`components/viewer/ExamTimerHeader.jsx`**: Barikade atas berisi Jam Realtime, Indikator Baterai (via JS Bridge), Timer Hitung Mundur, dan Tombol "Bantuan Pengawas".
 
-### B. Native Android Application (`android_app/`)
-- **`MainActivity.java`**: Main Activity pengelola WebView fullscreen, `FLAG_SECURE`, Immersive Sticky System Bars, dan LockTask Mode (`startLockTask()`).
-- **`WebBridge.java`**: Komunikasi dua arah antara WebView JavaScript dan Native Android (Battery Level, Current System Time, Siren Alarm Sound Trigger 95% Volume, Exit Password Modal Validation).
-- **`SecurityGuard.java`**: Worker thread pemantau aplikasi mengambang (Floating Apps Overlay), App Switching (`onPause`), status Bluetooth (`BluetoothAdapter`), dan Headset (`ACTION_HEADSET_PLUG`).
-- **`ExitPasswordDialog.java`**: Dialog modal masukan password pengawas (nilai dikonfigurasi terpisah) saat ingin menutup aplikasi atau keluar ujian.
+### B. Native Android Application (`android_app/`) — SUDAH DIHAPUS
+
+Direktori `android_app/` (WebView Java lama) sudah dihapus dari repo (lihat `AUDIT-KEAMANAN.md` #13).
+Kiosk native kini hanya `flutter_app/`.
 
 ---
 
